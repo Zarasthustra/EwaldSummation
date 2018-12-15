@@ -34,8 +34,8 @@ def get_test_configuration(n, d):
 
     return configuration
 
-test_configuration = get_test_configuration([3,3], [1,0.5])
+test_configuration = get_test_configuration([3,3,3], [1,1,1])
 
 print(test_configuration)
 
-print(cell_linked_neighbour_list(test_configuration, [4,4], [2,2]))
+print(cell_linked_neighbour_list(test_configuration, [2,2,2], [2.1,2.1,2.1]))
