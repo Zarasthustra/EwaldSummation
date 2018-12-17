@@ -1,0 +1,9 @@
+import numpy as np
+def particle_kind(N_particles, mole_fraction):
+    N_particles_a = int(N_particles * mole_fraction)
+    N_particles_b = N_particles - N_particles_a
+    
+print(particle_kind(10,0.40))
+    
+    
+    
