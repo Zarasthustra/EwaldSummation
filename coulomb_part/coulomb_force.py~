@@ -1,32 +1,51 @@
 # calculate the force on a particle i inspired by Allen-Tildesley 2017 p. 498
-# long range force will be added, could contain bugs i only testet Newton 3. Law
 import numpy as np
 from distances import get_distances
 from particle_kind import particle_kind
 from get_charges import get_charges
 from scipy.special import erfc
 
-##########################global variables ########################## 
-N_particles = 100
+#declare constants 
+N_particles = 4
 mole_fraction = 0.5
 dimension = 3
 charge_a = 1.
 charge_b = -1.
-particle_kind_vector = particle_kind(N_particles, mole_fraction)
-charge_vector = get_charges(particle_kind_vector, charge_a, charge_b)
-####################################################################
+variance = 0.1
 
-#real space coulomb force without cutoff
-def real_space_coulomb_force(x, variance):
+x_init = np.random.rand(N_particles,dimension)
+print('x_init'
+    , x_init)
+particle_kind_vector = particle_kind(N_particles, mole_fraction)
+print(particle_kind_vector)
+charge_vector = get_charges(particle_kind_vector, charge_a, charge_b)
+print(charge_vector)
+
+
+def real_space_coulomb_potential(x, variance):
     prefactor = 2 * variance / (np.sqrt(np.pi))
     force = np.zeros([N_particles,dimension])
     for i in range(N_particles):
         dist_and_r_ij = get_distances(x,i)
         r_ij = dist_and_r_ij[:,1:]
+        print('r_ij', r_ij)
         dist = dist_and_r_ij[:,0]
+        print('dist', dist)
         charge = charge_vector[i]
+        print('mul', r_ij * dist)
         charges = np.delete(charge_vector, i)
-        array = 1 / (dist**3) * charges * ( prefactor * dist * np.exp(-variance*dist**2) + erfc(variance * dist))
+        print('charges', charge_vector)
+        array = 1 / (dist**3) * charges ( prefactor * dist * np.exp(-variance * dist**2) + erfc(variance * dist))
+        print('array')
+        print(array)
         array = r_ij * array[:, np.newaxis]
+        print('array')
+        print(array)
         force[i] = charge  * np.sum(array, axis=0)
     return force
+#print(get_distances(x,1))
+a = real_space_coulomb_potential(x_init, 0.1)
+print('force')
+print(a)
+print(np.sum(a,axis=0))
+#print(b)

@@ -17,5 +17,6 @@ def get_distances(x, i):
     output = np.zeros((other_particles.shape[0], 4))
     for j in range(other_particles.shape[0]):
         output[j,1:] = other_particles[j,:]
-        output[j,0]  = np.linalg.norm(other_particles[j,:])                
+        output[j,0]  = np.linalg.norm(other_particles[j,:])
+
     return output
