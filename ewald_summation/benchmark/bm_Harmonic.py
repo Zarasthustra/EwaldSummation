@@ -1,8 +1,10 @@
 import numpy as np
-from MD import MD
+import ewald_summation as es
+"""from MD import MD
 from SimuConfig import SimuConfig
 from PhysicalWorld import PhysicalWorld
 from Integrators import Langevin
+"""
 import matplotlib.pyplot as plt
 
 class HarmonicPotential:
@@ -22,8 +24,8 @@ def StupidInitializer2(box_size, n_particles):
     v_0 = np.array([1., -0.5])[:, None]
     return masses, charges, q_0, v_0 * masses[:, None]
 
-test_config = SimuConfig(n_dim=1, box_size=(1.), n_particles=2, n_steps=10000, timestep=0.001, temp=300)
-test_md = MD(PhysicalWorld(), test_config, StupidInitializer2, Langevin(damping=0.))
+test_config = es.SimuConfig(n_dim=1, box_size=(1.), n_particles=2, n_steps=10000, timestep=0.001, temp=300)
+test_md = es.MD(es.PhysWorld(), test_config, StupidInitializer2, es.step_runners.Langevin(damping=0.))
 test_md.add_global_potential(HarmonicPotential(1.))
 test_md.run_all()
 #print(test_md.traj.get_qs())

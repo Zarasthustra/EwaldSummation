@@ -1,4 +1,6 @@
 import numpy as np
+
+
 class SimuConfig:
     def __init__(self, n_dim=3, box_size=(1.,1.,1.), n_particles=1, n_steps=1000,\
      timestep=1e-10, temp=300):

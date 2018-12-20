@@ -1,5 +1,5 @@
 import numpy as np
-from Traj import Traj
+from .traj import Traj
 
 class MD:
     def __init__(self, physical_world, simu_config, particle_initializer, step_runner):
