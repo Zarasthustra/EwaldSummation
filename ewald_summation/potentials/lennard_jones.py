@@ -1,48 +1,82 @@
-# implementation of a Lennard-Jones potential & gradient calculation with cutoff and switch function
-# switch function: smoothstep S_1
 import numpy as np
 
-# constants
-epsilon_lj = 1.
-sigma_lj = 2
-cutoff_lj = 3.5 * sigma_lj
-switch_width_lj = 2.
-ndim = 2
 
-def LJ_potential_pairwise(distance):
-    if(distance <= 0 or distance > cutoff_lj):
-        return 0.
-    else:
-        inv_dist = sigma_lj / distance
-        inv_dist2 = inv_dist * inv_dist
-        inv_dist4 = inv_dist2 * inv_dist2
-        inv_dist6 = inv_dist2 * inv_dist4
-        phi_LJ = 4. * epsilon_lj * inv_dist6 * (inv_dist6 - 1.)
-        if(distance <= cutoff_lj - switch_width_lj):
-            return phi_LJ
-        else:
-            t = (distance - cutoff_lj) / switch_width_lj
-            switch = t * t * (3. + 2. * t)
-            return phi_LJ * switch
+class LennardJones:
+    def __init__(self, epsilon, sigma, switch_start, cutoff):
+        self.epsilon = epsilon
+        self.sigma = sigma
+        self.cutoff = cutoff
+        self.switch_start = switch_start
 
-def LJ_force_pairwise(qij):
-    """qij = qi - qj, vector
-    """
-    distance = np.linalg.norm(qij)
-    if(distance <= 0 or distance > cutoff_lj):
-        return np.zeros(ndim)
-    else:
-        inv_dist_pure = 1 / distance
-        inv_dist = sigma_lj / distance
-        inv_dist2 = inv_dist * inv_dist
-        inv_dist4 = inv_dist2 * inv_dist2
-        inv_dist6 = inv_dist2 * inv_dist4
-        inv_dist8 = inv_dist4 * inv_dist4
-        if(distance <= cutoff_lj - switch_width_lj):
-            return 24. * epsilon_lj * inv_dist_pure * inv_dist_pure * inv_dist6 * (2 * inv_dist6 - 1.) * qij
-        else:
-            t = (distance - cutoff_lj) / switch_width_lj
-            # d(SV) = dS.V + S.dV
-            dsv = -24. * t * (1. + t) * inv_dist * epsilon_lj * inv_dist6 * (inv_dist6 - 1.)
-            sdv = (t * t * (3. + 2. * t)) * 24. * epsilon_lj * inv_dist_pure * inv_dist_pure * inv_dist6 * (2 * inv_dist6 - 1.) * qij
-            return dsv + sdv
+    def potential(self, x):
+        distances = np.linalg.norm(x, axis=-1)
+
+        # potential_pairwise
+        def p1(d):
+            sigma6 = self.sigma ** 6
+            potential = 4 * self.epsilon * sigma6 * (sigma6 / d ** 12 - 1 / d ** 6)
+            return potential
+
+        # potential_pairwise with switch function smoothstep S1
+        def p2(d):
+            t = (d - self.cutoff) / (self.cutoff - self.switch_start)
+            switch_function = t * t * (3. + 2. * t)
+            sigma6 = self.sigma ** 6
+            potential = 4 * self.epsilon * sigma6 * (sigma6 / d ** 12 - 1 / d ** 6)
+            return potential * switch_function
+
+        # piecewise function for Lennard Jones Potential
+        def p12(d):
+            output = np.piecewise(d, [d <= 0,
+                                 (0 < d) & (d < self.switch_start),
+                                 (self.switch_start <= d) & (d < self.cutoff),
+                                 self.cutoff <= d],
+                                 [0, p1, p2,0]
+                                 )
+            return output
+
+        # sum potentials for every particle
+        potential = np.sum(p12(distances), axis=-1)
+        return potential
+
+    def force(self, x):
+        # initialize output with distances and distance vectors
+        n_dim = x.shape[-1]
+        shape = list(x.shape)
+        shape[-1] += 1
+        output = np.zeros(shape)
+        output[:,:,1:] = x
+        output[:,:,0] = np.linalg.norm(x, axis=-1)
+
+        # force pairwise
+        def f1(d):
+            sigma6 = self.sigma ** 6
+            gradient = 24 * self.epsilon * sigma6 * (2 * sigma6 / d ** 14 - 1 / d ** 8)
+            return gradient
+
+        # force pairwise with switch_function
+        def f2(d):
+            sigma6 = self.sigma ** 6
+            t = (d - self.cutoff) / (self.cutoff - self.switch_start)
+            switch = 2 * t ** 3 + 3 * t ** 2
+            potential = 4 * self.epsilon * sigma6 * (sigma6 / d ** 12 - 1 / d ** 6)
+            dswitch = 6 / (self.cutoff - self.switch_start) * (t ** 2 + t) / d
+            gradient = 24 * self.epsilon * sigma6 * (2 * sigma6 / d ** 14 - 1 / d ** 8)
+            return (potential * dswitch + gradient * switch)
+
+        # piecewise function for lennard jones forces
+        def f12(d):
+            output = np.piecewise(d, [d <= 0,
+                                 (0 < d) & (d < self.switch_start),
+                                 (self.switch_start <= d) & (d < self.cutoff),
+                                 self.cutoff <= d],
+                                 [0, f1, f2,0]
+                                 )
+            return output
+
+        # apply piecewise function to distances and multiply with vectors
+        output[:, :, 0] = f12(output[:, :, 0])
+        for i in range(n_dim):
+            output[:, :, i+1] = np.multiply(output[:, :, i+1], output[:, :, 0])
+        output = np.sum(output, axis=-2)[:, 1:]
+        return output

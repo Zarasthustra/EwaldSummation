@@ -1,1 +1,2 @@
-from .distances import * 
+from .distances import *
+from .distance_vectors import *
