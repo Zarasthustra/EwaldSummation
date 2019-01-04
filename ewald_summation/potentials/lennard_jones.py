@@ -60,9 +60,9 @@ class LennardJones:
             t = (d - self.cutoff) / (self.cutoff - self.switch_start)
             switch = 2 * t ** 3 + 3 * t ** 2
             potential = 4 * self.epsilon * sigma6 * (sigma6 / d ** 12 - 1 / d ** 6)
-            dswitch = 6 / (self.cutoff - self.switch_start) * (t ** 2 + t)
+            dswitch = 6 / (self.cutoff - self.switch_start) / d * (t ** 2 + t)
             gradient = 24 * self.epsilon * sigma6 * (2 * sigma6 / d ** 14 - 1 / d ** 8)
-            return (potential * dswitch + gradient * switch)
+            return (-potential * dswitch + gradient * switch)
 
         # piecewise function for lennard jones forces
         def f12(d):
