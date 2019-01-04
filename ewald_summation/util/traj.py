@@ -4,7 +4,7 @@ class Traj:
 
     def __init__(self, config):
         # TODO: sanity checks
-        self.box_size = config.box_size
+        self.l_box = config.l_box
         self.n_dim = config.n_dim
         self.timestep = config.timestep
         self.n_particles = config.n_particles
@@ -18,7 +18,7 @@ class Traj:
 
     def make_new_frame(self):
         return TrajFrame(self.n_dim, self.n_particles)
-    
+
     def get_current_frame(self):
         return self._frames[self.current_frame_num]
 
@@ -27,10 +27,10 @@ class Traj:
         self._frames.append(new_frame)
         self.current_frame_num += 1
         self.current_time += self.timestep
-    
+
     def get_ps(self):
         return np.array([frame.p for frame in self._frames])
-    
+
     def get_qs(self):
         return np.array([frame.q for frame in self._frames])
 

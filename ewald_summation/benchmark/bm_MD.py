@@ -15,7 +15,7 @@ class NullPotential:
     # TODO: calc_potential(q, sys_config)
 
 
-def StupidInitializer(box_size, n_particles):
+def StupidInitializer(l_box, n_particles):
     # need to return a tuple of four vectors
     # masses, charges, q_0 and p_0
     masses = np.array([1., 1.])
@@ -25,7 +25,7 @@ def StupidInitializer(box_size, n_particles):
     return masses, charges, q_0, v_0 * masses[:, None]
 
 
-test_config = es.SimuConfig(n_dim=1, box_size=(1.), n_particles=2, n_steps=1000, timestep=0.001, temp=300)
+test_config = es.SimuConfig(n_dim=1, l_box=[1.], n_particles=2, n_steps=1000, timestep=0.001, temp=300)
 test_md = es.MD(es.PhysWorld(), test_config, StupidInitializer, es.step_runners.Langevin(damping=0.))
 test_md.add_global_potential(NullPotential())
 test_md.run_all()
