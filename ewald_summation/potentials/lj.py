@@ -4,12 +4,22 @@ import numpy as np
 
 # constants
 epsilon_lj = 1.
-sigma_lj = 2
+sigma_lj = 1
 cutoff_lj = 3.5 * sigma_lj
-switch_width_lj = 2.
+switch_width_lj = 1
 ndim = 2
 
-def LJ_potential_pairwise(distance):
+
+def lj_potential_total(x):
+    n_particles = x.shape[0]
+    potential = 0
+    for i in range(n_particles):
+        for j in range(i, n_particles):
+            potential += lj_potential_pairwise(np.linalg.norm(x[i, :] - x[j, :]))
+    return potential
+
+
+def lj_potential_pairwise(distance):
     if(distance <= 0 or distance > cutoff_lj):
         return 0.
     else:
@@ -25,7 +35,7 @@ def LJ_potential_pairwise(distance):
             switch = t * t * (3. + 2. * t)
             return phi_LJ * switch
 
-def LJ_force_pairwise(qij):
+def lj_force_pairwise(qij):
     """qij = qi - qj, vector
     """
     distance = np.linalg.norm(qij)
@@ -46,4 +56,3 @@ def LJ_force_pairwise(qij):
             dsv = -24. * t * (1. + t) * inv_dist * epsilon_lj * inv_dist6 * (inv_dist6 - 1.)
             sdv = (t * t * (3. + 2. * t)) * 24. * epsilon_lj * inv_dist_pure * inv_dist_pure * inv_dist6 * (2 * inv_dist6 - 1.) * qij
             return dsv + sdv
-
