@@ -2,6 +2,7 @@ import numpy as np
 
 
 # new distance implementation, giving all distance vectors at once
+# works for n_dim=2,3
 class DistanceVectors:
     def __init__(self, n_dim, l_box=[], l_cell=1, PBC=False):
         self.n_dim =  n_dim
@@ -119,10 +120,9 @@ class DistanceVectors:
     def call_function(self, x, i=0):
         if self.neighbour_flag:
             return self.distance_vectors_neighbour_list(x, i)
+        elif self.PBC:
+            return self.distance_vectors_periodic(x)
         else:
-            if self.PBC:
-                return self.distance_vectors_periodic(x)
-            else:
-                return self.distance_vectors_non_periodic(x)
+            return self.distance_vectors_non_periodic(x)
 
     __call__ = call_function

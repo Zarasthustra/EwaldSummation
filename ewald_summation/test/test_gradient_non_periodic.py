@@ -3,16 +3,16 @@ import matplotlib.pyplot as plt
 import pytest
 import ewald_summation as es
 
-
+# Does not work since I incooperated n_dim into init of pot and dist
 # test lennard jones force by comparing the output of force function from potentials
 # to the negative gradient of the potential from potentials
 @pytest.mark.parametrize('n_points, start, end, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj', [
-    (int(1E5), 1, 2, 1, 1, 2.5, 3.5),
+    (int(1E5), 1, 2, [1, 1], [1, 1], 2.5, 3.5),
     ])
 def test_gradient(n_points, start, end, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj):
     # initiate classes
     distance_vectors = es.distances.DistanceVectors(2)
-    lennardjones = es.potentials.LennardJones(epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj)
+    lennardjones = es.potentials.LennardJones(2, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj)
 
     # define distances array
     distances = np.linspace(start, end, n_points)
@@ -35,13 +35,13 @@ def test_gradient(n_points, start, end, epsilon_lj, sigma_lj, switch_start_lj, c
 
 
 # plot result from sigma = 1 to sigma = 3.5
-a1,b1,c1 = test_gradient(int(1E4), 1, 3.5, 1, 1, 2.5, 3.5)
+a1,b1,c1 = test_gradient(int(1E4), 1, 2, [1, 1], [1, 1], 2.5, 3.5)
 plt.subplot(2,1,1)
 plt.plot(a1,b1)
 plt.plot(a1,c1)
 
 # plot result form sigma = 2.4 to sigma = 3.6
-a2,b2,c2 = test_gradient(int(1E4), 2.4, 3.6, 1, 1, 2.5, 3.5)
+a2,b2,c2 = test_gradient(int(1E4), 1, 2, [1, 1], [1, 1], 2.5, 3.5)
 plt.subplot(2,1,2)
 plt.plot(a2,b2)
 plt.plot(a2,c2)
