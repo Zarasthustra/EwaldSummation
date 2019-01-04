@@ -53,6 +53,6 @@ def lj_force_pairwise(qij):
         else:
             t = (distance - cutoff_lj) / switch_width_lj
             # -d(SV) = -dS.V + S.(-dV)
-            dsv = -24. * t * (1. + t) * inv_dist_pure * epsilon_lj * inv_dist6 * (inv_dist6 - 1.) * qij
+            dsv = -24. * t * (1. + t) / switch_width_lj * inv_dist_pure * epsilon_lj * inv_dist6 * (inv_dist6 - 1.) * qij
             sdv = (t * t * (3. + 2. * t)) * 24. * epsilon_lj * inv_dist_pure * inv_dist_pure * inv_dist6 * (2 * inv_dist6 - 1.) * qij
             return dsv + sdv
