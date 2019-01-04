@@ -13,8 +13,9 @@ import ewald_summation as es
     (np.random.uniform(-20, 10, (100, 2)), (-30, 10)),
     ])
 def test_distance_vectors_periodic(x, l_box):
-    distance_vectors_periodic = es.distances.DistanceVectors(l_box, periodicity=True)
-    distance_vectors_non_periodic = es.distances.DistanceVectors(l_box, periodicity=False)
+    n_dim = x.shape[1]
+    distance_vectors_periodic = es.distances.DistanceVectors(n_dim, l_box, PBC=True)
+    distance_vectors_non_periodic = es.distances.DistanceVectors(n_dim, l_box, PBC=False)
     np.testing.assert_almost_equal(distance_vectors_periodic(x), distance_vectors_non_periodic(x))
 
 
@@ -27,6 +28,7 @@ def test_distance_vectors_periodic(x, l_box):
     (np.array([[0, 0], [4, 1]]), np.array([[0, 0], [1, 1]]), [3, 3]),
     ])
 def test_distance_vectors_periodic(x1, x2, l_box):
-    distance_vectors_periodic = es.distances.DistanceVectors(l_box, periodicity=True)
-    distance_vectors_non_periodic = es.distances.DistanceVectors(l_box, periodicity=False)
+    n_dim = x1.shape[1]
+    distance_vectors_periodic = es.distances.DistanceVectors(n_dim, l_box, PBC=True)
+    distance_vectors_non_periodic = es.distances.DistanceVectors(n_dim, l_box, PBC=False)
     np.testing.assert_almost_equal(distance_vectors_periodic(x1), distance_vectors_non_periodic(x2))

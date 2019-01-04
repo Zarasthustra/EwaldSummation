@@ -11,7 +11,7 @@ import ewald_summation as es
     ])
 def test_gradient(n_points, start, end, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj):
     # initiate classes
-    distance_vectors = es.distances.DistanceVectors()
+    distance_vectors = es.distances.DistanceVectors(2)
     lennardjones = es.potentials.LennardJones(epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj)
 
     # define distances array
@@ -25,7 +25,7 @@ def test_gradient(n_points, start, end, epsilon_lj, sigma_lj, switch_start_lj, c
 
     # calculate the corresponding gradient by interpolation, mult by -1
     gradient_np = - 1 * np.gradient(potential, distances)
-    
+
     # caculate the force for one particle at origin and one particle at d acting
     # on second particle with force methond from lennard_jones.py
     gradient_calc = np.zeros(len(distances))
