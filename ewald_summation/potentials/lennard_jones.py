@@ -16,13 +16,13 @@ class LennardJones:
         self.switch_start = switch_start
 
     def potential(self, x):
-        # write distances into array with corresponding sigma, epsilon along axis=2
+        # initialize output as array with distances and corresponding sigma, epsilon along axis=2
         output = np.zeros((x.shape[0], x.shape[1], 3))
         output[:, :, 0] = np.linalg.norm(x, axis=-1)
         output[:, :, 1] = self.sigma_arr
         output[:, :, 2] = self.epsilon_arr
 
-        def potential(x):
+        def potential_along_axis(x):
             # potenital w/o switch
             if x[0] > 0 and x[0] <= self.switch_start * x[1]:
                 x[0] = 4 * x[2] * x[1]**6 * (x[1]**6 / x[0]**12 - 1 / x[0]**6)
@@ -37,47 +37,37 @@ class LennardJones:
             return x
 
         # calculate potentials
-        output = np.apply_along_axis(potential, 2, output)
+        output = np.apply_along_axis(potential_along_axis, 2, output)
         output = np.sum(output[:, :, 0], axis=-1)
         return output
 
     def force(self, x):
-        # initialize output with distances and distance vectors
-        shape = list(x.shape)
-        shape[-1] += 1
-        output = np.zeros(shape)
-        output[:,:,1:] = x
-        output[:,:,0] = np.linalg.norm(x, axis=-1)
+        # initialize output as array with distances  and corresponding
+        # distanvce vecotors, sigma, epsilon along axis=2
+        output = np.zeros((x.shape[0], x.shape[1], 3 + self.n_dim))
+        output[:, :, 0] = np.linalg.norm(x, axis=-1)
+        output[:, :, 1 : self.n_dim + 1] = x
+        output[:, :, -2] = self.sigma_arr
+        output[:, :, -1] = self.epsilon_arr
 
-        # force pairwise
-        def f1(d):
-            sigma6 = self.sigma ** 6
-            gradient = 24 * self.epsilon * sigma6 * (2 * sigma6 / d ** 14 - 1 / d ** 8)
-            return gradient
+        def force_along_axis(x):
+            # force w/o switch
+            if x[0] > 0 and x[0] <= self.switch_start * x[-2]:
+                x[: self.n_dim] = 24 * x[-1] * x[-2]**6 * (2 * x[-2]**6 / x[0] ** 14 - 1 / x[0] ** 8) * x[1 : self.n_dim + 1]
+            # force with switch
+            elif x[0] > self.switch_start * x[-2] and x[0] <= self.cutoff * x[-2]:
+                    t = (x[0] - self.cutoff * x[-2]) / (self.cutoff * x[-2] - self.switch_start * x[-2])
+                    switch = 2 * t ** 3 + 3 * t ** 2
+                    potential = 4 * x[-1] * x[-2]**6 * (x[-2]**6 / x[0]**12 - 1 / x[0]**6)
+                    dswitch = 6 / (self.cutoff * x[-2] - self.switch_start * x[-2]) / x[0] * (t ** 2 + t)
+                    gradient = 24 * x[-1] * x[-2]**6 * (2 * x[-2]**6 / x[0] ** 14 - 1 / x[0] ** 8)
+                    x[: self.n_dim] = (-potential * dswitch + gradient * switch) * x[1 : self.n_dim + 1]
+            # force after cutoff
+            elif x[0] > self.cutoff * x[-2]:
+                    x[: self.n_dim] = 0
+            return x
 
-        # force pairwise with switch_function
-        def f2(d):
-            sigma6 = self.sigma ** 6
-            t = (d - self.cutoff) / (self.cutoff - self.switch_start)
-            switch = 2 * t ** 3 + 3 * t ** 2
-            potential = 4 * self.epsilon * sigma6 * (sigma6 / d ** 12 - 1 / d ** 6)
-            dswitch = 6 / (self.cutoff - self.switch_start) * (t ** 2 + t)
-            gradient = 24 * self.epsilon * sigma6 * (2 * sigma6 / d ** 14 - 1 / d ** 8)
-            return (potential * dswitch + gradient * switch)
-
-        # piecewise function for lennard jones forces
-        def f12(d):
-            output = np.piecewise(d, [d <= 0,
-                                 (0 < d) & (d < self.switch_start),
-                                 (self.switch_start <= d) & (d < self.cutoff),
-                                 self.cutoff <= d],
-                                 [0, f1, f2,0]
-                                 )
-            return output
-
-        # apply piecewise function to distances and multiply with vectors
-        output[:, :, 0] = f12(output[:, :, 0])
-        for i in range(self.n_dim):
-            output[:, :, i+1] = np.multiply(output[:, :, i+1], output[:, :, 0])
-        output = np.sum(output, axis=-2)[:, 1:]
+        # calculate forces
+        output = np.apply_along_axis(force_along_axis, 2, output)
+        output = np.sum(output[:, :, 0 : self.n_dim], axis=-2)
         return output
