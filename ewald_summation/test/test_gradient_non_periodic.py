@@ -6,8 +6,8 @@ import ewald_summation as es
 # test lennard jones force by comparing the output of force function from potentials
 # to the negative gradient of the potential from potentials
 @pytest.mark.parametrize('n_points, start, end, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj', [
-    (int(1E4), 1, 2.5, [1, 1], [1, 1], 2.5, 3.5),
-    (int(1E4), 2.5, 3.5, [1, 1], [1, 1], 2.5, 3.5),
+    (int(3E3), 1, 2.5, [1, 1], [1, 1], 2.5, 3.5),
+    (int(3E3), 2.5, 3.5, [1, 1], [1, 1], 2.5, 3.5),
     ])
 def test_gradient(n_points, start, end, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj):
     # initiate classes
@@ -32,4 +32,4 @@ def test_gradient(n_points, start, end, epsilon_lj, sigma_lj, switch_start_lj, c
     for i in range(len(distances)):
         gradient_calc[i] = lennardjones.force(distance_vectors(np.array([[0, 0],[distances[i], 0]])))[1,0]
     # test both gradients
-    np.testing.assert_allclose(gradient_np, gradient_calc, rtol=5E-2, atol=1E-6)
+    np.testing.assert_allclose(gradient_np, gradient_calc, rtol=1E-2, atol=2E-5)
