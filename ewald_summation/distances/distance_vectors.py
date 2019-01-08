@@ -7,7 +7,7 @@ class DistanceVectors:
     def __init__(self, n_dim, l_box=[], l_cell=1, PBC=False, sigma=[], epsilon=[], neighbour=False):
         self.n_dim =  n_dim
         self.PBC = PBC
-        self.l_box = l_box
+        self.l_box = np.array(l_box)
         self.l_cell = l_cell
         self.neighbour_flag = False
         self.sigma = sigma
@@ -42,6 +42,13 @@ class DistanceVectors:
         return x[:, None, :] - x[None, :, :]
 
     def distance_vectors_periodic(self, x):
+        # new implementation
+        distance_vectors = x[:, None, :] - x[None, :, :]
+        np.mod(distance_vectors, self.l_box, out=distance_vectors)
+        mask = distance_vectors > np.divide(self.l_box, 2.)
+        distance_vectors += mask * -self.l_box
+        return distance_vectors        
+        '''
         # create divisor array containing corresponding box length for x
         divisor = np.zeros(x.shape)
         for i in range(self.n_dim):
@@ -51,6 +58,7 @@ class DistanceVectors:
         # return distance vector tensor
         output = projection[:, None, :] - projection[None, :, :]
         return output
+        '''
 
     def cell_linked_neighbour_list(self, x):
         self.neighbour_flag = True
