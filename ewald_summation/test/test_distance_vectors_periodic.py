@@ -23,7 +23,8 @@ def test_distance_vectors_periodic(x, l_box):
 @pytest.mark.parametrize('x1, x2, l_box', [
     (np.array([[0, 0, 0], [1, 1, 4]]), np.array([[0, 0, 0], [1, 1, 1]]), [3, 3, 3]),
     (np.array([[0, 0, 0], [1, 3.5, 1]]), np.array([[0, 0, 0], [1, 0.5, 1]]), [3, 3, 3]),
-    (np.array([[0, 0, 0], [5, 1, 1]]), np.array([[0, 0, 0], [2, 1, 1]]), [3, 3, 3]),
+    # modified, previous test case is not correct ...
+    (np.array([[0, 0, 0], [5, 1, 1]]), np.array([[0, 0, 0], [-1, 1, 1]]), [3, 3, 3]),
     (np.array([[0, 0], [1, 4]]), np.array([[0, 0], [1, 1]]), [3, 3]),
     (np.array([[0, 0], [4, 1]]), np.array([[0, 0], [1, 1]]), [3, 3]),
     ])
