@@ -8,6 +8,7 @@ import ewald_summation as es
     (np.array([[0,0,0],[1,1,1],[0,1,0]]), 1, 1, 2.5, 3.5),
     (np.array([[0,0,0],[0,1,200]]), 1, 1, 2.5, 3.5),
     (np.array([[0,0,0],[0,1,3.1]]), 1, 1, 2.5, 3.5),
+    (np.random.uniform(-20, 20, (100, 2)), 1, 1, 2.5, 3.5),
     (np.random.uniform(-20, 20, (100, 3)), 1, 1, 2.5, 3.5),
     ])
 def test_potential(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj):
