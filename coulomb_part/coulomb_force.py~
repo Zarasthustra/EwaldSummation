@@ -1,51 +1,52 @@
 # calculate the force on a particle i inspired by Allen-Tildesley 2017 p. 498
+# long range force will be added, could contain bugs i only testet Newton 3. Law
 import numpy as np
 from distances import get_distances
 from particle_kind import particle_kind
 from get_charges import get_charges
 from scipy.special import erfc
-
-#declare constants 
-N_particles = 4
-mole_fraction = 0.5
-dimension = 3
-charge_a = 1.
-charge_b = -1.
-variance = 0.1
-
-x_init = np.random.rand(N_particles,dimension)
-print('x_init'
-    , x_init)
-particle_kind_vector = particle_kind(N_particles, mole_fraction)
-print(particle_kind_vector)
-charge_vector = get_charges(particle_kind_vector, charge_a, charge_b)
-print(charge_vector)
+from itertools import product
 
 
-def real_space_coulomb_potential(x, variance):
+##########################global variables ############################# 
+N_particles = 6                                                         
+mole_fraction = 0.5                                                     
+dimension = 3                                                           
+charge_a = 1.                                                           
+charge_b = -1.                                                          
+density = 0.8                                                           
+particle_kind_vector = particle_kind(N_particles, mole_fraction)        
+charge_vector = get_charges(particle_kind_vector, charge_a, charge_b)   
+#box_length = (N_particles/density)**(1/dimension)   
+box_length=1
+########################################################################
+
+#real space coulomb force without cutoff
+def real_space_coulomb_force(x, variance):
     prefactor = 2 * variance / (np.sqrt(np.pi))
     force = np.zeros([N_particles,dimension])
+    some_value = 4 * np.pi / 3 * box_length ** (1/dimension) * np.sum(charge_vector*x) # possible other definition for n neq 3
     for i in range(N_particles):
         dist_and_r_ij = get_distances(x,i)
         r_ij = dist_and_r_ij[:,1:]
-        print('r_ij', r_ij)
         dist = dist_and_r_ij[:,0]
-        print('dist', dist)
         charge = charge_vector[i]
-        print('mul', r_ij * dist)
         charges = np.delete(charge_vector, i)
-        print('charges', charge_vector)
-        array = 1 / (dist**3) * charges ( prefactor * dist * np.exp(-variance * dist**2) + erfc(variance * dist))
-        print('array')
-        print(array)
+        array = 1 / (dist**3) * charges * ( prefactor * dist * np.exp(-variance*dist**2) + erfc(variance * dist))  # possible other definition for n neq 3
         array = r_ij * array[:, np.newaxis]
-        print('array')
-        print(array)
-        force[i] = charge  * np.sum(array, axis=0)
+        force[i] = charge  * np.sum(array, axis=0) - charge * some_value
     return force
-#print(get_distances(x,1))
-a = real_space_coulomb_potential(x_init, 0.1)
-print('force')
-print(a)
-print(np.sum(a,axis=0))
-#print(b)
+
+def reciprocal_space_coulomb_force(x, resolution, variance):
+    k = 2 * np.pi / box_length * np.array( list (product(range(1,resolution+1), repeat=dimension)))
+    inv_V = box_length**(1./dimension)
+    k_dot_x = np.sum (np.matmul(x,np.transpose(k)), axis=0)
+    reciprocal_density_distribution = np.exp(1j*k_dot_x)
+    k_sq = np.linalg.norm(k, axis = 1) ** 2
+    reciprocal_force = - inv_V * charge_vector * 4 * np.pi * np.exp(-k_sq/4 * variance**(-2)) / k_sq * np.imag(reciprocal_density_distribution * np.exp(1j * np.matmul(x,np.transpose(k)) ))
+    
+    return reciprocal_force
+        
+        
+a= reciprocal_space_coulomb_force(np.random.rand(N_particles,dimension)*box_length, 3, 0.1)      
+print(a, a.shape)
