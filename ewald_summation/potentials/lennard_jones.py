@@ -82,3 +82,15 @@ class LennardJones:
             temp_arr[:, 0] = np.apply_along_axis(self.potential_along_axis, 1, temp_arr)
             output[i] = np.sum(temp_arr[:, 0])
         return output
+
+    def force_neighbour(self, x, distance_vectors):
+        head = distance_vectors.head
+        neighbour = distance_vectors.neighbour
+        cell_indexes = distance_vectors.cell_indexes
+        output = np.zeros((x.shape[0], self.n_dim))
+        for i in range(x.shape[0]):
+            head_index = cell_indexes[i]
+            temp_arr = distance_vectors(x, i)
+            temp_arr[:, : self.n_dim] = np.apply_along_axis(self.force_along_axis, 1, temp_arr)
+            output[i, :] = np.sum(temp_arr[:, : self.n_dim], axis=0)
+        return output

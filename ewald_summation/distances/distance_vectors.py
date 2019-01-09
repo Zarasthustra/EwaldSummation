@@ -47,7 +47,7 @@ class DistanceVectors:
         np.mod(distance_vectors, self.l_box, out=distance_vectors)
         mask = distance_vectors > np.divide(self.l_box, 2.)
         distance_vectors += mask * -self.l_box
-        return distance_vectors        
+        return distance_vectors
         '''
         # create divisor array containing corresponding box length for x
         divisor = np.zeros(x.shape)
@@ -107,45 +107,10 @@ class DistanceVectors:
             head_indexes = self.cell_indexes_arr[index_i : index_i + 3,
                                                  index_j : index_j + 3]
         if self.n_dim == 3:
-            head_indexes = self.cell_indexes_arr[index_i - 1 : index_i + 2,
-                                                 index_j - 1 : index_j + 2,
-                                                 index_k - 1 : index_k + 2]
+            head_indexes = self.cell_indexes_arr[index_i : index_i + 3,
+                                                 index_j : index_j + 3,
+                                                 index_k : index_k + 3]
         head_indexes = head_indexes[head_indexes >= 0].astype(int)
-        # # create array with all cell indexes off all neighbouring cells
-        # temp_arr = []
-        # if self.n_dim == 2:
-        #     for i in range(index_ijk[0] - 1, index_ijk[0] + 2):
-        #         temp_arr.extend([i] * 3)
-        #     for i in range(3):
-        #         for i in range(index_ijk[1] - 1, index_ijk[1] + 2):
-        #             temp_arr.append(i)
-        # if self.n_dim == 3:
-        #     for i in range(index_ijk[0] - 1, index_ijk[0] + 2):
-        #         temp_arr.extend([i] * 9)
-        #     for i in range(3):
-        #         for i in range(index_ijk[1] - 1, index_ijk[1] + 2):
-        #             temp_arr.extend([i] * 3)
-        #     for i in range(3):
-        #         for i in range(index_ijk[2] - 1, index_ijk[2] + 2):
-        #             temp_arr.extend([i for i in range(index_ijk[1] - 1, index_ijk[1] + 2)])
-        # temp_arr = np.array(temp_arr).reshape((self.n_dim, 3 ** self.n_dim))
-        #
-        # # calculate cell indexes
-        # head_indexes = []
-        # if self.PBC:
-        #     for i in range(temp_arr.shape[1]):
-        #         for j in range(self.n_dim):
-        #             if temp_arr[j, i] > n_cells[j]:
-        #                 temp_arr[j, i] = 0
-        #             elif temp_arr[j, i] < 0:
-        #                 temp_arr[j, i] = n_cells[j]
-        # for i in range(temp_arr.shape[1]):
-        #     if temp_arr[:, i].min() >= 0:
-        #         if (n_cells - temp_arr[:, i]).min() >= 0:
-        #             temp = temp_arr[0, i] + temp_arr[1, i] * n_cells[0]
-        #             if self.n_dim == 3:
-        #                 temp += temp_arr[2, i] * n_cells[0] * n_cells[1]
-        #             head_indexes.append(int(temp))
 
         # get distance vectors for particle i with all particles in box and neighbour boxes
         # get lists for corresponding sigma and epsilon with mixing condition

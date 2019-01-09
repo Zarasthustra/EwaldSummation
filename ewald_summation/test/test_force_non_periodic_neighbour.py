@@ -15,7 +15,7 @@ def test_potential_neighbour(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj
     sigma=sigma, epsilon=epsilon, neighbour=True, PBC=False)
     distance_vectors.cell_linked_neighbour_list(x)
     lennard_jones = es.potentials.LennardJones(n_dim, epsilon, sigma, switch_start_lj, cutoff_lj)
-    potential1 = lennard_jones.potential_neighbour(x, distance_vectors)
+    force1 = lennard_jones.potential_neighbour(x, distance_vectors)
     distance_vectors.neighbour_flag = False
-    potential2 = lennard_jones.potential(distance_vectors(x))
-    np.testing.assert_allclose(potential1, potential2)
+    force2 = lennard_jones.potential(distance_vectors(x))
+    np.testing.assert_allclose(force1, force2)
