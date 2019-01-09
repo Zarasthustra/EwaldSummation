@@ -7,17 +7,17 @@ import matplotlib.pyplot as plt
 
 x = np.random.uniform(0, 10.5, (10, 2))
 
-# x = np.random.uniform([[0.1, 0.1],
-#                        [1.03191961, 0.21524854],
-#                        [3.22118963, 0.54861028],
-#                        [4.27407734, 7.95771957],
-#                        [5.32091109, 5.34034925],
-#                        [4.68244577, 5.72148385],
-#                        [6.97563888, 8.41157314],
-#                        [3.50278161, 9.11960907],
-#                        [2.42106713, 5.68641472],
-#                        [0.94817014, 7.4468208 ],
-#                        ])
+x = np.array([[ 0.7981622,   4.36161408],
+ # [ 8.0316976 ,  2.82936701],
+ # [ 5.73925569,  0.38718973],
+ # [ 8.09399424,  6.32034004],
+ [ 2.99969741,  6.81350401],
+ # [ 9.37189372,  6.59517841],
+ # [ 7.57672347, 10.01023115],
+ [ 3.6382473 ,  7.89578095],
+ [ 0.52676375,  5.6192579 ],
+ # [ 8.1107442,   3.16067917],
+                       ])
 
 epsilon = [1] * x.shape[0]
 sigma = [1] * x.shape[0]
@@ -30,17 +30,21 @@ distance_vectors.cell_linked_neighbour_list(x)
 # print(distance_vectors.distance_vectors_neighbour_list(x, 0))
 # # print(len(distance_vectors.distance_vectors_neighbour_list(x, 0)))
 lennard_jones = es.potentials.LennardJones(2, epsilon, sigma, 2.5, 3.5)
-dist = distance_vectors(x, 0)
-# print(dist)
+dist = distance_vectors(x, 1)[:, :3]
+print(dist)
 potential1 = lennard_jones.potential_neighbour(x, distance_vectors)
 distance_vectors.neighbour_flag = False
 potential2 = lennard_jones.potential(distance_vectors(x))
-a = distance_vectors(x)[0, :, :]
+a = distance_vectors(x)[1, :, :]
 b = np.zeros((a.shape[0], a.shape[1] + 1))
 b[:, 0] = np.linalg.norm(a, axis=-1)
 b[:, 1:] = a
-# print(b)
+# print('nieghbor')
+# print(b - dist)
 print(potential2 - potential1)
-# print(x)
+print(b)
+b.sort(axis=0)
+dist.sort(axis=0)
+print(b - dist)
 # print('cell_index', distance_vectors.cell_indexes)
 # print(dist)
