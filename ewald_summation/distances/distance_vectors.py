@@ -2,17 +2,53 @@ import numpy as np
 
 
 # new distance implementation, giving all distance vectors at once
+# works for n_dim=2,3
 class DistanceVectors:
-    def __init__(self, l_box=[], l_cell=1, periodicity=False):
-        self.periodicity = periodicity
-        self.l_box = l_box
+    def __init__(self, n_dim, l_box=[], l_cell=1, PBC=False, sigma=[], epsilon=[], neighbour=False):
+        self.n_dim =  n_dim
+        self.PBC = PBC
+        self.l_box = np.array(l_box)
         self.l_cell = l_cell
         self.neighbour_flag = False
+        self.sigma = sigma
+        self.epsilon = epsilon
+        self.n_cells = [int(self.l_box[i] / self.l_cell) for i in range(self.n_dim)]
+        # make array with cell indexes and pbc neighbours or -1 entries on the border for
+        # self.distance_vectors_neighbour_list
+        if neighbour:
+            self.cell_indexes_arr = -1 * np.ones(np.array(self.n_cells) + 2)
+            if self.n_dim == 2:
+                self.cell_indexes_arr[1:-1, 1:-1] = np.transpose(np.arange(np.prod(self.n_cells)).reshape(self.n_cells))
+                if self.PBC:
+                    self.cell_indexes_arr[:, 0] = self.cell_indexes_arr[:, -2]
+                    self.cell_indexes_arr[:, -1] = self.cell_indexes_arr[:, 1]
+                    self.cell_indexes_arr[0, :] = self.cell_indexes_arr[-2, :]
+                    self.cell_indexes_arr[-1, :] = self.cell_indexes_arr[1, :]
+
+
+            if self.n_dim == 3:
+                self.cell_indexes_arr[1:-1, 1:-1, 1:-1] = np.transpose(np.arange(np.prod(self.n_cells)).reshape(self.n_cells))
+                if self.PBC:
+                    self.cell_indexes_arr[:, :, 0] = self.cell_indexes_arr[:, :, -2]
+                    self.cell_indexes_arr[:, :, -1] = self.cell_indexes_arr[:, :, 1]
+                    self.cell_indexes_arr[:, 0, :] = self.cell_indexes_arr[:, -2, :]
+                    self.cell_indexes_arr[:, -1, :] = self.cell_indexes_arr[:, 1, :]
+                    self.cell_indexes_arr[0, :, :] = self.cell_indexes_arr[-2, :, :]
+                    self.cell_indexes_arr[-1, :, :] = self.cell_indexes_arr[1, :, :]
+
+
 
     def distance_vectors_non_periodic(self, x):
         return x[:, None, :] - x[None, :, :]
 
     def distance_vectors_periodic(self, x):
+        # new implementation
+        distance_vectors = x[:, None, :] - x[None, :, :]
+        np.mod(distance_vectors, self.l_box, out=distance_vectors)
+        mask = distance_vectors > np.divide(self.l_box, 2.)
+        distance_vectors += mask * -self.l_box
+        return distance_vectors
+        '''
         # create divisor array containing corresponding box length for x
         divisor = np.zeros(x.shape)
         for i in range(self.n_dim):
@@ -22,15 +58,15 @@ class DistanceVectors:
         # return distance vector tensor
         output = projection[:, None, :] - projection[None, :, :]
         return output
+        '''
 
     def cell_linked_neighbour_list(self, x):
         self.neighbour_flag = True
-        self.n_dim = x.shape[1]
         n_particles = x.shape[0]
-        n_cells = [self.l_box[i] / self.l_cell for i in range(self.n_dim)]
+        n_cells = self.n_cells
 
         # create array containing cell index for every particle
-        cell_indexes = np.floor(np.divide(x, self.l_cell))
+        cell_indexes = np.floor(x / self.l_cell)
         cell_indexes[:, 1] = np.multiply(cell_indexes[:, 1], n_cells[0])
         if self.n_dim == 3:
             cell_indexes[:, 2] = np.multiply(cell_indexes[:, 2], n_cells[0] * n_cells[1])
@@ -54,138 +90,58 @@ class DistanceVectors:
         self.n_cells = n_cells
 
     def distance_vectors_neighbour_list(self, x, i):
+        n_cells = np.array(self.n_cells)
         cell_index = self.cell_indexes[i]
-        index_i = int(cell_index % self.n_cells[0])
-        if self.n_dim == 2:
-            index_j = int(cell_index / self.n_cells[0])
-        if self.n_dim == 3:
-            index_j = int((cell_index % (self.n_cells[0] * self.n_cells[1])) / self.n_cells[0])
-            index_k = int(cell_index / (self.n_cells[0] * self.n_cells[1]))
+        index_ijk = [0] * self.n_dim
 
-        # create list with head indices for cell and neighbourcells
-        head_indexes = [cell_index]
-        # append head_indexes with neighbours along axis0
-        if index_i == 0:
-            head_indexes.append(int(cell_index + 1))
-            if self.periodicity:
-                head_indexes.append(int(cell_index + self.n_cells[0] - 1))
-        else:
-            if index_i == self.n_cells[0] - 1:
-                head_indexes.append(int(cell_index - 1))
-                if self.periodicity:
-                    head_indexes.append(int(cell_index - self.n_cells[0] + 1))
-            else:
-                head_indexes.append(int(cell_index - 1))
-                head_indexes.append(int(cell_index + 1))
-        # append head_indexes with neighbours along axis1
-        if index_j == 0:
-            head_indexes.append(int(cell_index + self.n_cells[0]))
-            if self.periodicity:
-                head_indexes.append(int(cell_index + self.n_cells[0] * self.n_cells[1] - self.n_cells[0]))
-        else:
-            if index_j == self.n_cells[1] - 1:
-                head_indexes.append(int(cell_index - self.n_cells[0]))
-                if self.periodicity:
-                    head_indexes.append(int(cell_index - self.n_cells[0] * self.n_cells[1] + self.n_cells[0]))
-            else:
-                head_indexes.append(int(cell_index - self.n_cells[0]))
-                head_indexes.append(int(cell_index + self.n_cells[0]))
-        # append head_indexes with neighbours along axis2
+        # calculate cell index for i as i,j,k
+        index_i = int(cell_index % n_cells[0])
+        if self.n_dim == 2:
+            index_j = int(cell_index / n_cells[0])
         if self.n_dim == 3:
-            if index_k == 0:
-                head_indexes.append(int(cell_index + self.n_cells[0] * self.n_cells[1]))
-                if self.periodicity:
-                    head_indexes.append(int(cell_index + self.n_cells[0] * self.n_cells[1] * (self.n_cells[2] - 1)))
-            else:
-                if index_k == self.n_cells[2] - 1:
-                    head_indexes.append(int(cell_index - self.n_cells[0] * self.n_cells[1]))
-                    if self.periodicity:
-                        head_indexes.append(int(cell_index - self.n_cells[0] * self.n_cells[1] * (self.n_cells[1] - 1)))
-                else:
-                    head_indexes.append(int(cell_index - self.n_cells[0] * self.n_cells[1]))
-                    head_indexes.append(int(cell_index + self.n_cells[0] * self.n_cells[1]))
+            index_j = int((cell_index % (n_cells[0] * n_cells[1])) / n_cells[0])
+            index_k = int(cell_index / (n_cells[0] * n_cells[1]))
+
+        # create array with all cell indexes off all neighbouring cells
+        if self.n_dim == 2:
+            head_indexes = self.cell_indexes_arr[index_i : index_i + 3,
+                                                 index_j : index_j + 3]
+        if self.n_dim == 3:
+            head_indexes = self.cell_indexes_arr[index_i : index_i + 3,
+                                                 index_j : index_j + 3,
+                                                 index_k : index_k + 3]
+        head_indexes = head_indexes[head_indexes >= 0].astype(int)
 
         # get distance vectors for particle i with all particles in box and neighbour boxes
+        # get lists for corresponding sigma and epsilon with mixing condition
         distance_vectors = np.array([])
+        sigma_list = []
+        epsilon_list = []
         for j in range(len(head_indexes)):
             list_index = self.head[head_indexes[j]]
             while list_index != -1:
-                distance_vector = x[i, :] - x[list_index, :]
-                distance_vectors = np.append(distance_vectors, distance_vector)
+                distance_vector_ij = x[i, :] - x[list_index, :]
+                distance_vectors = np.append(distance_vectors, distance_vector_ij)
+                sigma_ij = 0.5 * (self.sigma[i] + self.sigma[list_index])
+                sigma_list.append(sigma_ij)
+                epsilon_ij = np.sqrt(self.epsilon[i] * self.epsilon[list_index])
+                epsilon_list.append(epsilon_ij)
                 list_index = self.neighbour[list_index]
         distance_vectors = distance_vectors.reshape(int(distance_vectors.size / self.n_dim), self.n_dim)
-        return distance_vectors
+        # init output as array with distances, dist vect, sigma and epsilon along axis=2
+        output = np.zeros((distance_vectors.shape[0], distance_vectors.shape[1] + 3))
+        output[:, 1 : self.n_dim + 1] = distance_vectors
+        output[:, 0] = np.linalg.norm(output[:, 1 : self.n_dim + 1], axis=-1)
+        output[:, -2] = sigma_list
+        output[:, -1] = epsilon_list
+        return output
 
     def call_function(self, x, i=0):
         if self.neighbour_flag:
             return self.distance_vectors_neighbour_list(x, i)
+        elif self.PBC:
+            return self.distance_vectors_periodic(x)
         else:
-            self.n_dim = x.shape[1]
-            if self.periodicity:
-                return self.distance_vectors_periodic(x)
-            else:
-                return self.distance_vectors_non_periodic(x)
+            return self.distance_vectors_non_periodic(x)
 
     __call__ = call_function
-
-
-x1 = np.array([[0,0,0],
-               [1.6,0,0],
-               [0,1.6,0],
-               [0,0,1.6],
-               [3.1,0,0],
-               [0,3.1,0],
-               [0,0,3.1],
-               [3.1,1.6,0],
-               [4,0,4],
-               ])
-
-# i = 8
-#
-# classo1 = DistanceVectors(l_box=[4.5, 4.5, 4.5], l_cell=1.5, periodicity=False)
-# classo1.cell_linked_neighbour_list(x1)
-# print(classo1.distance_vectors_non_periodic_neighbour_list(x1, i))
-# classo1 = DistanceVectors(l_box=[4.5, 4.5, 4.5], l_cell=1.5, periodicity=True)
-# classo1.cell_linked_neighbour_list(x1)
-# print(classo1.distance_vectors_non_periodic_neighbour_list(x1, i))
-
-# classo = DistanceVectors(l_box=[4.5, 4.5], l_cell=1.5, periodicity=False)
-# classo.cell_linked_neighbour_list(x0)
-# print(classo.head)
-# print(classo.neighbour)
-# print(classo.distance_vectors_non_periodic_neighbour_list(x0, i))
-#
-# classo = DistanceVectors(l_box=[4.5, 4.5], l_cell=1.5, periodicity=True)
-# classo.cell_linked_neighbour_list(x0)
-# # print(classo.head)
-# # print(classo.neighbour)
-# print(classo.distance_vectors_non_periodic_neighbour_list(x0, i))
-
-
-# x1 = np.array([[0,0,0],
-#                [0,1,0],
-#                [0,0,1],
-#                [0,1,1],
-#                [1,1,1],
-#                [0,0,1.1],
-#                [0,1.1,0],
-#                [1.1,0,0],
-#                [2.1,0,0],
-#                [0,2.1,0],
-#                [0,0,2.1],
-#                [2.1,2.1,0],
-#                [2.1,2.1,2.1],
-#                ])
-#
-# x0 = np.array([[0,0],
-#                [1,0],
-#                # [0,1],
-#                # [1,1],
-#                [1.6,0],
-#                [3.1,0],
-#                [0.6,1.6],
-#                [1.6,1.6],
-#                [3.1,1.6],
-#                [0,3.5],
-#                [2,3.5],
-#                ])
