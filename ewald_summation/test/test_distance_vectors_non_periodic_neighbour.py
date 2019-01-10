@@ -10,15 +10,13 @@ import ewald_summation as es
     (np.random.uniform(0, 10, (500, 3)), (10, 10, 10), 1),
     ])
 def test_distance_vectors_non_periodic_neighbour(x, l_box, l_cell):
-    n_particles = x.shape[0]
-    n_dim = x.shape[1]
-    sigma = [1] * n_particles
-    epsilon = [1] * n_particles
-    distance_vectors = es.distances.DistanceVectors(n_dim, l_box, l_cell, PBC=False, sigma=sigma, epsilon=epsilon)
+    simu_config = es.SimuConfig(n_dim=x.shape[1], n_particles=x.shape[0],
+    l_box=l_box, l_cell=l_cell, neighbour=True)
+    distance_vectors = distance_vectors = es.distances.DistanceVectors(simu_config)
     distance_vectors.cell_linked_neighbour_list(x)
     max_distance = 0
     for i in range(len(x)):
-        distance_vectors_arr = distance_vectors(x, i)[:, 1 : n_dim + 1]
+        distance_vectors_arr = distance_vectors(x, i)[:, 1 : simu_config.n_dim + 1]
         distance_vectors_arr = np.linalg.norm(distance_vectors_arr, axis=-1)
         if distance_vectors_arr.max() > max_distance:
             max_distance = distance_vectors_arr.max()

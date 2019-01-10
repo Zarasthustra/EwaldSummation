@@ -4,18 +4,19 @@ import numpy as np
 # new distance implementation, giving all distance vectors at once
 # works for n_dim=2,3
 class DistanceVectors:
-    def __init__(self, n_dim, l_box=[], l_cell=1, PBC=False, sigma=[], epsilon=[], neighbour=False):
-        self.n_dim =  n_dim
-        self.PBC = PBC
-        self.l_box = np.array(l_box)
-        self.l_cell = l_cell
+    def __init__(self, config):
+        self.n_dim =  config.n_dim
+        self.PBC = config.PBC
+        self.l_box = np.array(config.l_box)
+        self.l_cell = config.l_cell
         self.neighbour_flag = False
-        self.sigma = sigma
-        self.epsilon = epsilon
-        self.n_cells = [int(self.l_box[i] / self.l_cell) for i in range(self.n_dim)]
+        self.sigma = config.sigma_lj
+        self.epsilon = config.epsilon_lj
+        self.neighbour = config.neighbour
         # make array with cell indexes and pbc neighbours or -1 entries on the border for
         # self.distance_vectors_neighbour_list
-        if neighbour:
+        if self.neighbour:
+            self.n_cells = [int(self.l_box[i] / self.l_cell) for i in range(self.n_dim)]
             self.cell_indexes_arr = -1 * np.ones(np.array(self.n_cells) + 2)
             if self.n_dim == 2:
                 self.cell_indexes_arr[1:-1, 1:-1] = np.transpose(np.arange(np.prod(self.n_cells)).reshape(self.n_cells))

@@ -20,7 +20,7 @@ class MD:
         self.n_steps, self.n_particles, self.n_dim = simu_config.n_steps, simu_config.n_particles, simu_config.n_dim
 
         # distance_vectors obj
-        self.distance_vectors = es.distances.DistanceVectors(self.config.n_dim, self.config.l_box, self.config.l_cell, self.config.PBC)
+        self.distance_vectors = es.distances.DistanceVectors(self.config)
 
         # traj obj
         self.traj = Traj(self.config)
@@ -49,12 +49,21 @@ class MD:
         # check
         self.pairwise_potentials.append(new_pairwise_potential)
 
+    def add_lennard_jones_potential(self):
+        # check
+        self.lennard_jones = es.potentials.LennardJones(self.config)
+        self.pairwise_potentials.append(self.lennard_jones.force)
+
     def add_coulumb_potential(self, new_coulumb_potential):
         # check
         self.coulumb_potentials.append(new_coulumb_potential)
 
     def sum_force(self, q):
         forces = [pot.calc_force(q, self.config) for pot in self.global_potentials]
+        try:
+            forces.append(self.lennard_jones.force(self.distance_vectors(q)))
+        except:
+            pass
         # TODO: include other potentials
         return np.sum(forces, axis = 0)
 

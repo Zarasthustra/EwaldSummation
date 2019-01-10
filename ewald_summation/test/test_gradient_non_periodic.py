@@ -11,8 +11,10 @@ import ewald_summation as es
     ])
 def test_gradient(n_points, start, end, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj):
     # initiate classes
-    distance_vectors = es.distances.DistanceVectors(2)
-    lennardjones = es.potentials.LennardJones(2, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj)
+    simu_config = es.SimuConfig(n_dim=2, n_particles=2,
+    cutoff_lj=cutoff_lj, switch_start_lj=switch_start_lj)
+    distance_vectors = es.distances.DistanceVectors(simu_config)
+    lennardjones = es.potentials.LennardJones(simu_config)
 
     # define distances array
     distances = np.linspace(start, end, n_points)
