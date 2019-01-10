@@ -12,10 +12,10 @@ class DistanceVectors:
         self.neighbour_flag = False
         self.sigma = sigma
         self.epsilon = epsilon
-        self.n_cells = [int(self.l_box[i] / self.l_cell) for i in range(self.n_dim)]
         # make array with cell indexes and pbc neighbours or -1 entries on the border for
         # self.distance_vectors_neighbour_list
         if neighbour:
+            self.n_cells = [int(self.l_box[i] / self.l_cell) for i in range(self.n_dim)]
             self.cell_indexes_arr = -1 * np.ones(np.array(self.n_cells) + 2)
             if self.n_dim == 2:
                 self.cell_indexes_arr[1:-1, 1:-1] = np.transpose(np.arange(np.prod(self.n_cells)).reshape(self.n_cells))

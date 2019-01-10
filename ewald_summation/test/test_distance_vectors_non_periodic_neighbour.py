@@ -14,7 +14,8 @@ def test_distance_vectors_non_periodic_neighbour(x, l_box, l_cell):
     n_dim = x.shape[1]
     sigma = [1] * n_particles
     epsilon = [1] * n_particles
-    distance_vectors = es.distances.DistanceVectors(n_dim, l_box, l_cell, PBC=False, sigma=sigma, epsilon=epsilon)
+    distance_vectors = distance_vectors = es.distances.DistanceVectors(n_dim, l_box=l_box, l_cell=l_cell,
+    sigma=sigma, epsilon=epsilon, neighbour=True, PBC=False)
     distance_vectors.cell_linked_neighbour_list(x)
     max_distance = 0
     for i in range(len(x)):
