@@ -15,7 +15,7 @@ class Langevin:
         self.sqf = np.sqrt((1.0 - self.edt ** 2) / beta)
         self.force = None # Storage for last frame force
 
-    def run(self, force_func, frame, next_frame):
+    def run(self, force_func, potential_func, frame, next_frame):
         if self.force is None:
             self.force = force_func(frame.q)
         next_frame.p[:, :] = frame.p + self.th * self.force

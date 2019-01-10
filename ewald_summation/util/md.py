@@ -58,8 +58,13 @@ class MD:
         # TODO: include other potentials
         return np.sum(forces, axis = 0)
 
+    def sum_potential(self, q):
+        potentials = [pot.calc_potential(q, self.config) for pot in self.global_potentials]
+        # TODO: include other potentials
+        return np.sum(potentials, axis = 0)
+
     def run_step(self):
-        next_frame = self.step_runner.run(self.sum_force, self.traj.get_current_frame(), self.traj.make_new_frame())
+        next_frame = self.step_runner.run(self.sum_force, self.sum_potential, self.traj.get_current_frame(), self.traj.make_new_frame())
         self.traj.set_new_frame(next_frame)
 
     def run_all(self):
