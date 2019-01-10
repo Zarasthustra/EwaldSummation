@@ -2,18 +2,18 @@ import numpy as np
 
 
 class LennardJones:
-    def __init__(self, n_dim, epsilon, sigma, switch_start, cutoff):
-        self.n_dim = n_dim
+    def __init__(self, config):
+        self.n_dim = config.n_dim
         # calculate array for epsilon where the value of element i,j corresponds to the value
         # for particles i,j of distance_vectors array according to mixing condition
         # epsilon_ij = sqrt(epsilon_i * epsilon_j)
-        self.epsilon_arr = np.sqrt(np.array(epsilon)[:, None] * np.array(epsilon))
+        self.epsilon_arr = np.sqrt(np.array(config.epsilon_lj)[:, None] * np.array(config.epsilon_lj))
         # calculate array for sigma where the value of element i,j corresponds to the value
         # for particles i,j of distance_vectors array according to mixing condition
         # sigma_ij = (0.5 * (sigma_i + sigma_j))
-        self.sigma_arr = (0.5 * (np.array(sigma)[:, None] + np.array(sigma)))
-        self.cutoff = cutoff
-        self.switch_start = switch_start
+        self.sigma_arr = (0.5 * (np.array(config.sigma_lj)[:, None] + np.array(config.sigma_lj)))
+        self.cutoff = config.cutoff_lj
+        self.switch_start = config.switch_start_lj
 
     def potential_along_axis(self, x):
         # potenital w/o switch
