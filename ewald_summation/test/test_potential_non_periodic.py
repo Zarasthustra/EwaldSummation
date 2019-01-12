@@ -19,4 +19,4 @@ def test_potential(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj):
     lennardjones = es.potentials.LennardJones(simu_config)
     potential1 = 0.5 * np.sum(lennardjones.potential(distance_vectors(x)))
     potential2 = es.potentials.lj_potential_total(x)
-    np.testing.assert_almost_equal(potential1, potential2)
+    np.testing.assert_allclose(potential1, potential2)
