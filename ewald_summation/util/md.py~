@@ -54,16 +54,14 @@ class MD:
         self.lennard_jones = es.potentials.LennardJones(self.config)
         self.pairwise_potentials.append(self.lennard_jones.force)
 
-    def add_coulumb_potential(self):
+    def add_coulumb_potential(self, new_coulumb_potential):
         # check
-        self.coulomb = es.potentials.CoulombForce(self.config)
-        self.pairwise_potentials.append(self.coulomb.force)
+        self.coulumb_potentials.append(new_coulumb_potential)
 
     def sum_force(self, q):
         forces = [pot.calc_force(q, self.config) for pot in self.global_potentials]
         try:
             forces.append(self.lennard_jones.force(self.distance_vectors(q)))
-            forces.append(self.lennard_jones.force(self.distance_vectors(q),q))
         except:
             pass
         # TODO: include other potentials
