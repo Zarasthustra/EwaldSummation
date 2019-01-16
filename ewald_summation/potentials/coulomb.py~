@@ -21,7 +21,6 @@ class Coulomb:
         
 
     def real_space_coulomb_force(self, distance_vector):
-        print('inside real coulomb force')
         prefactor = 2 * self.gauss_scaling / (np.sqrt(np.pi))
         force = np.zeros([self.n_particles,self.n_dim])
         surrounding_of_boxes = 4 * np.pi / 3 * self.l_box ** (1/self.n_dim) \
@@ -42,7 +41,6 @@ class Coulomb:
         return force
 
     def reciprocal_space_coulomb_force(self, x):
-        print('inside reciprocal coulomb force')
         # input are the particle positions np array with shape n_particles, n_dim
         k = 2 * np.pi / self.l_box * np.array( list (product(range(-resolution,resolution+1), repeat=self.n_dim)))
         k = np.delete(k, k.shape[0]//2,0)
@@ -58,7 +56,7 @@ class Coulomb:
         return reciprocal_force
 
     def force(self,q,distance_vector):
-        print('inside coulomb force')
+       # print('inside force')
         force = self.reciprocal_space_coulomb_force(q) + self.real_space_coulomb_force(distance_vector)
         print(force)
         return force
