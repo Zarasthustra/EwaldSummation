@@ -8,28 +8,31 @@
     "\n",
     "This jupyter notebook is intented to test the computation time of \n",
     "different implementations for the Lennard Jones potential with an  \n",
-    "S1 switch function.  \n",
-    "Generally it should also be able to handle particle types. <br>\n",
-    "\n"
+    "S1 switch function. Generally it should also be able to handle particle types.  \n",
+    "Remember that the implementation of the switch function for particle  \n",
+    "types used here is unnecessarily complicated.  \n",
+    "The different implementations also differ by more than 1 percent at times.  \n",
+    "Also, this is the \"loosing your loops\" talk on vectorization in numpy  \n",
+    "I wanted to share, giving a good overview:  \n",
+    "https://www.youtube.com/watch?v=EEUXKG97YRw\n"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 1,
+   "execution_count": null,
    "metadata": {},
    "outputs": [],
    "source": [
     "import math\n",
     "import torch\n",
     "import numpy as np\n",
-    "from numba import vectorize, cuda, njit, jit\n",
-    "import torch\n",
-    "import ewald_summation as es"
+    "from numba import njit, jit\n",
+    "import torch"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 2,
+   "execution_count": null,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -38,12 +41,11 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 3,
+   "execution_count": null,
    "metadata": {},
    "outputs": [],
    "source": [
-    "N = 3000\n",
-    "\n",
+    "N = 1000\n",
     "configuration = np.random.uniform(0, 4, (N, 3))\n",
     "sigma = np.array([1] * N)\n",
     "sigma_arr = 0.5 * (sigma[:, None] + sigma)\n",
@@ -67,7 +69,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 4,
+   "execution_count": null,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -75,11 +77,7 @@
     "    if(distance <= 0 or distance > cutoff_lj):\n",
     "        return 0.\n",
     "    else:\n",
-    "        inv_dist = sigma_lj / distance\n",
-    "        inv_dist2 = inv_dist * inv_dist\n",
-    "        inv_dist4 = inv_dist2 * inv_dist2\n",
-    "        inv_dist6 = inv_dist2 * inv_dist4\n",
-    "        phi_LJ = 4. * epsilon_lj * inv_dist6 * (inv_dist6 - 1.)\n",
+    "        phi_LJ = 4. * epsilon_lj * sigma_lj**6 * (sigma_lj**6 / distance**12 - 1 / distance**6)\n",
     "        if(distance <= cutoff_lj - switch_width_lj):\n",
     "            return phi_LJ\n",
     "        else:\n",
@@ -87,7 +85,7 @@
     "            switch = t * t * (3. + 2. * t)\n",
     "            return phi_LJ * switch\n",
     "        \n",
-    "def lj_potential_loops(x):\n",
+    "def lj_potential_loops(x, sigma_arr, epsilon_arr):\n",
     "    output = np.zeros(len(x))\n",
     "    for i in range(len(x)):\n",
     "        potential = 0\n",
@@ -98,16 +96,6 @@
     "            potential += lj_potential_pairwise(distance,sigma_lj, epsilon_lj)\n",
     "        output[i] = potential\n",
     "    return output\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 5,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "x = np.random.uniform(0, 4, (100, 3))\n",
-    "np.testing.assert_allclose(np.sum(lj_potential_loops(x)), es.potentials.lj.lj_potential_total(x))"
    ]
   },
   {
@@ -138,7 +126,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 6,
+   "execution_count": null,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -149,7 +137,7 @@
     "            \n",
     "        # potential with switch\n",
     "        elif x[0] > cutoff_lj - switch_width_lj and x[0] <= cutoff_lj:\n",
-    "            t = (x[0] - cutoff_lj) / (cutoff_lj - cutoff_lj - switch_width_lj)\n",
+    "            t = (x[0] - cutoff_lj) / (switch_width_lj)\n",
     "            switch = 2 * t ** 3 + 3 * t ** 2\n",
     "            x[0] = switch * (4 * x[2] * x[1]**6 * (x[1]**6 / x[0]**12 - 1 / x[0]**6))\n",
     "            \n",
@@ -183,8 +171,8 @@
     "epsilon_temp = np.array([1] * len(x))\n",
     "epsilon_arr_temp = np.sqrt(epsilon_temp[:, None] * epsilon_temp)\n",
     "\n",
-    "np.testing.assert_allclose(0.5 * np.sum(lj_potential_np_along_axis(x, sigma_arr_temp, epsilon_arr_temp)), \n",
-    "                           es.potentials.lj.lj_potential_total(x))"
+    "np.testing.assert_allclose(lj_potential_np_along_axis(x, sigma_arr_temp, epsilon_arr_temp), \n",
+    "                          lj_potential_loops(x, sigma_arr_temp, epsilon_arr_temp), rtol=1E-4)"
    ]
   },
   {
@@ -262,8 +250,8 @@
     "epsilon_temp = np.array([1] * len(x))\n",
     "epsilon_arr_temp = np.sqrt(epsilon_temp[:, None] * epsilon_temp)\n",
     "\n",
-    "np.testing.assert_allclose(np.sum(lj_potential_np_along_axis_replace_loop(x, sigma_arr_temp, epsilon_arr_temp)), \n",
-    "                           es.potentials.lj.lj_potential_total(x))"
+    "np.testing.assert_allclose(lj_potential_np_along_axis_replace_loop(x, sigma_arr_temp, epsilon_arr_temp), \n",
+    "                           lj_potential_loops(x, sigma_arr_temp, epsilon_arr_temp), rtol=1E-4)"
    ]
   },
   {
@@ -340,8 +328,8 @@
     "sigma_temp = 1\n",
     "epsilon_temp = 1\n",
     "x = np.random.uniform(0, 4, (100, 3))\n",
-    "np.testing.assert_allclose(0.5 * np.sum(lj_potential_np_piecewise(x, sigma_temp, epsilon_temp)),\n",
-    "                           es.potentials.lj.lj_potential_total(x))"
+    "np.testing.assert_allclose(lj_potential_np_piecewise(x, sigma_temp, epsilon_temp),\n",
+    "                           lj_potential_loops(x, sigma_arr_temp, epsilon_arr_temp), rtol=1E-4)"
    ]
   },
   {
@@ -421,8 +409,8 @@
     "epsilon_temp = np.array([1] * len(x))\n",
     "epsilon_arr_temp = np.sqrt(epsilon_temp[:, None] * epsilon_temp)\n",
     "\n",
-    "np.testing.assert_allclose(0.5 * np.sum(lj_potential_numpy(x, sigma_arr_temp, sigma_arr_6_temp, sigma_arr_12_temp, \n",
-    "                            epsilon_arr_temp)), es.potentials.lj.lj_potential_total(x), rtol=1E-7)"
+    "np.testing.assert_allclose(lj_potential_numpy(x, sigma_arr_temp, sigma_arr_6_temp, sigma_arr_12_temp, \n",
+    "                           epsilon_arr_temp), lj_potential_loops(x, sigma_arr_temp, epsilon_arr_temp), rtol=1E-7)"
    ]
   },
   {
@@ -507,8 +495,8 @@
     "epsilon_temp = np.array([1] * len(x))\n",
     "epsilon_arr_temp = np.sqrt(epsilon_temp[:, None] * epsilon_temp)\n",
     "\n",
-    "np.testing.assert_allclose(0.5 * torch.sum(lj_potential_pytorch(x, sigma_arr_temp, sigma_arr_6_temp, sigma_arr_12_temp, \n",
-    "                            epsilon_arr_temp)), es.potentials.lj.lj_potential_total(x), rtol=1E-5)"
+    "np.testing.assert_allclose(lj_potential_pytorch(x, sigma_arr_temp, sigma_arr_6_temp, sigma_arr_12_temp, \n",
+    "                           epsilon_arr_temp), lj_potential_loops(x, sigma_arr_temp, epsilon_arr_temp), rtol=1E-5)"
    ]
   },
   {
@@ -644,7 +632,7 @@
    "outputs": [],
    "source": [
     "x = np.random.uniform(0, 4, (100, 3))\n",
-    "np.testing.assert_allclose(np.sum(lj_potential_numba(x)), es.potentials.lj.lj_potential_total(x))"
+    "np.testing.assert_allclose(lj_potential_numba(x), lj_potential_loops(x, sigma_arr_temp, epsilon_arr_temp))"
    ]
   },
   {
@@ -686,13 +674,6 @@
     "| pytorch masking CUDA | 1.14 s ± 76.6 ms |  \n",
     "| Numba | 1.27 s ± 21.1 ms | \n"
    ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": []
   }
  ],
  "metadata": {
