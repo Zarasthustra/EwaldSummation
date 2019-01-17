@@ -25,7 +25,7 @@ charge_vector = np.append(charge_vector_a,charge_vector_b)
 #q=np.asarray([[0,0,0],[0,0,1]])
 #q=q/np.linalg.norm(q[0]-q[1])
 #print(q)
-test_size = 100
+test_size = 1000
 
 def distance_vectors_periodic(q,l_box):
     # new implementation
@@ -57,15 +57,15 @@ def test_particles_on_edge():
                         np.zeros(test_size*3*n_particles).reshape(test_size,n_particles,3), \
                         np.zeros(test_size*3*n_particles).reshape(test_size,n_particles,3)
     for _ in range(test_size):
-        real_cutoff = l_box[_] / 2
-        gauss_scaling = 6 / l_box[_]
+        real_cutoff = 10 / 2
+        gauss_scaling = 6 / 10
         first_particle = np.asarray([0.5,0.5,0.5])
         scnd_particle = np.asarray([1.,1.,1.])*l_box[_]-0.5
         q = np.append(first_particle,scnd_particle).reshape(2,3)
         distance_vectors = distance_vectors_periodic(q,np.asarray([l_box[_]]*3))
-        #print(distance_vectors)
+        print(distance_vectors)
         real_f[_] = real_space_coulomb_force(distance_vectors, l_box[_],real_cutoff,gauss_scaling,q)
-        print(real_f[_])
+        #print(real_f[_])
         rec_f[_] = reciprocal_space_coulomb_force(q,l_box[_],gauss_scaling)
         forces[_] = real_f[_] + rec_f[_]
            
@@ -76,7 +76,7 @@ def real_space_coulomb_force(distance_vectors,l_box, real_cutoff,gauss_scaling,q
     prefactor = 2 * gauss_scaling / (np.sqrt(np.pi))
     force = np.zeros([n_particles,n_dim])
     distances = np.linalg.norm(distance_vectors, axis=2)
-    #print(distances)
+    print(distances)
     for i in range(n_particles):
         indices_to_delete = np.append(np.argwhere(distances[i]>real_cutoff),i)
         r_ij = np.delete(distance_vectors[i], indices_to_delete, axis=0)
