@@ -87,16 +87,15 @@ def coulomb_potential(distances, distance_vectors):
 
 @jit
 def stupid_coulomb_potential(distances,distance_vectors,n_box):
-   pot, pot_in_box = 0,0
-   positiv_count, negativ_count = 0,0
+   pot = 0
    n = np.array( list (product(range(-n_box,n_box+1), repeat=3)))
    n = np.delete(n, n.shape[0] // 2,0)
    # n ist the lattice vector for all boxes n_box means the radius in wich boxes ar scanned
    for i,j in combinations(np.arange(n_particles),2):
-       pot_in_box = charge_vector[i]*charge_vector[j] / np.linalg.norm(distance_vectors[i,j])
+       pot += charge_vector[i]*charge_vector[j] / np.linalg.norm(distance_vectors[i,j])
    for actual_n in n:
        for i,j in product(np.arange(n_particles),repeat=2):
-           pot_ = charge_vector[i]*charge_vector[j] / np.linalg.norm(distance_vectors[i,j] + actual_n)
+           pot += charge_vector[i]*charge_vector[j] / np.linalg.norm(distance_vectors[i,j] + actual_n)
    return 0.5*pot
     
 #print(coulomb_potential(*distances_not_PBC()))
