@@ -80,10 +80,10 @@ def coulomb_potential(distances, distance_vectors):
 
     self_interaction = gauss_scaling / np.sqrt(np.pi) * np.sum(charge_vector**2)
     pot=0
-    for i,j in combinations(np.arange(n_particles),2):
+    for i,j in permutations(np.arange(n_particles),2):
         real_part = erfc(gauss_scaling * distances[i,j]) / distances[i,j]
         pot += charge_vector[i] * charge_vector[j] * real_part
-    return pot+rec_part
+    return 0.5*pot+rec_part
 
 @jit
 def stupid_coulomb_potential(distances,distance_vectors,n_box):
@@ -91,14 +91,24 @@ def stupid_coulomb_potential(distances,distance_vectors,n_box):
    positiv_count, negativ_count = 0,0
    n = np.array( list (product(range(-n_box,n_box+1), repeat=3)))
    n = np.delete(n, n.shape[0] // 2,0)
-   # n ist the lattice vector for all boxes n_box means the radius in wich boxes ar scanned
-   for i,j in combinations(np.arange(n_particles),2):
+   for i,j in permutations(np.arange(n_particles),2):
        pot_in_box = charge_vector[i]*charge_vector[j] / np.linalg.norm(distance_vectors[i,j])
+       if pot_in_box > 0:
+           positiv_count += 1
+       else:
+           negativ_count +=1
+       pot += pot_in_box
    for actual_n in n:
        for i,j in product(np.arange(n_particles),repeat=2):
            pot_ = charge_vector[i]*charge_vector[j] / np.linalg.norm(distance_vectors[i,j] + actual_n)
+           if pot_ < 0:
+               positiv_count += 1
+           else:
+               negativ_count +=1
+           pot += pot_
+   print(positiv_count,negativ_count)
    return 0.5*pot
     
 #print(coulomb_potential(*distances_not_PBC()))
 #print(stupid_coulomb_potential(*distances_not_PBC()))  
-print('results for ewald sum and stupid sum:',test())
+print(test())
