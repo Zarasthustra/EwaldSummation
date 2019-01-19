@@ -32,7 +32,7 @@ gauss_scaling = 6 / l_box
 
 
 def test():
-    ewald_pot = coulomb_potential(*distances())
+    ewald_pot = ewald_pot2(*distances())
     stp_pot = stupid_coulomb_potential(*distances_not_PBC(),n_box)   
     return ewald_pot, stp_pot
     
@@ -60,7 +60,46 @@ def distances_not_PBC():
     distances = np.linalg.norm(distance_vectors, axis=2)
     return distances, distance_vectors
 
+def ewald_pot2(distances, distance_vectors):
+    # ref: https://pdfs.semanticscholar.org/9b54/fdc67c4dac6dab1044c305f40b6beb86d43e.pdf
 
+    M = 10 # reciprocal periodic radius
+    alpha = .5
+    
+    v_real = v_rec = v_self = 0.
+    # real part
+    for i,j in combinations(np.arange(n_particles),2):
+        real_part = erfc(alpha * distances[i,j]) / distances[i,j]
+        v_real += charge_vector[i] * charge_vector[j] * real_part
+    
+    # --- only useful for cases that minimum image convention is not enough
+    # e.g. when alpha is too big
+    REAL_PERIODIC_REPEATS = 3
+    ks = np.array(list(product(range(-REAL_PERIODIC_REPEATS, REAL_PERIODIC_REPEATS+1), repeat=3)))
+    ks = l_box * np.delete(ks, ks.shape[0] // 2, 0)
+    for k in ks:
+        for i in range(n_particles):
+            for j in range(n_particles):
+                distance = np.linalg.norm(distance_vectors[i, j] + k)
+                v_real += 0.5 * charge_vector[i] * charge_vector[j] * erfc(alpha * distance) / distance
+    # ---
+    # reciprocal part
+    m = np.array(list(product(range(-M, M+1), repeat=3)))
+    m = (1/l_box) * np.delete(m, m.shape[0] // 2, 0)
+    m_dot_q = np.matmul(q, np.transpose(m))
+    ## structure factor
+    S_m = charge_vector.dot(np.exp(np.pi * 2.j * m_dot_q))
+    S_m_modul_sq = np.real(np.conjugate(S_m) * S_m)
+    m_modul_sq = np.linalg.norm(m, axis = 1) ** 2
+    coeff_S = np.exp(-(np.pi / alpha) ** 2 * m_modul_sq) / m_modul_sq
+    v_rec = 0.5 / np.pi / (l_box ** 3)
+    v_rec *= np.sum(coeff_S * S_m_modul_sq)
+    # self part
+    v_self = -alpha / np.sqrt(np.pi) * np.sum(charge_vector**2)
+    #print('v_real', v_real)
+    #print('v_rec', v_rec)
+    #print('v_self', v_self)
+    return v_real + v_rec + v_self
 
 @jit
 def coulomb_potential(distances, distance_vectors):
@@ -95,9 +134,10 @@ def stupid_coulomb_potential(distances,distance_vectors,n_box):
        pot_inside_box += charge_vector[i]*charge_vector[j] / np.linalg.norm(distance_vectors[i,j])
    for actual_n in n:
        for i,j in product(np.arange(n_particles),repeat=2):
-           pot += charge_vector[i]*charge_vector[j] / np.linalg.norm(distance_vectors[i,j] + actual_n)
+           pot += charge_vector[i]*charge_vector[j] / np.linalg.norm(distance_vectors[i,j] + l_box * actual_n)
    return 0.5*pot + pot_inside_box
     
 #print(coulomb_potential(*distances_not_PBC()))
 #print(stupid_coulomb_potential(*distances_not_PBC()))  
+print('Note: theoretically stupid sum cannot give a real convergent result in this case, no matter how large n_box is.')
 print('results for ewald sum and stupid sum:',test())
