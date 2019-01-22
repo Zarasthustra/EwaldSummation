@@ -66,7 +66,7 @@ def ewald_force(distances, distance_vectors, i, alpha = 1.):
         if(j != i):
             real_part = erfc(alpha * distances[i,j]) / distances[i,j] + \
                 2 * alpha / np.sqrt(np.pi) * np.exp(-((alpha * distances[i,j]) ** 2))
-            f_real -= charge_vector[j] * (real_part / (distances[i,j]) ** 2) * distance_vectors[i, j]
+            f_real += charge_vector[j] * (real_part / (distances[i,j]) ** 2) * distance_vectors[i, j]
     # --- only useful for cases that minimum image convention is not enough
     # e.g. when alpha is too big
     REAL_PERIODIC_REPEATS = 3
@@ -78,7 +78,7 @@ def ewald_force(distances, distance_vectors, i, alpha = 1.):
             distance = np.linalg.norm(distance_vectors[i, j] + k)
             real_part = erfc(alpha * distance) / distance + \
                 2 * alpha / np.sqrt(np.pi) * np.exp(-((alpha * distance) ** 2))
-            f_real -= charge_vector[j] * (real_part / distance ** 2) * distance_vector
+            f_real += charge_vector[j] * (real_part / distance ** 2) * distance_vector
     # ---
     f_real *= charge_vector[i]
     # reciprocal part
@@ -91,7 +91,7 @@ def ewald_force(distances, distance_vectors, i, alpha = 1.):
     #S_m_modul_sq = np.real(np.conjugate(S_m) * S_m)
     m_modul_sq = np.linalg.norm(m, axis = 1) ** 2
     coeff_S = np.exp(-(np.pi / alpha) ** 2 * m_modul_sq) / m_modul_sq
-    f_rec = charge_vector[i] / (l_box ** 3)
+    f_rec = -charge_vector[i] / (l_box ** 3)
     f_rec *= 2 * (coeff_S * np.imag(S_m * dS_star_m)).dot(m)
     # print('f_real', f_real)
     # print('f_rec', f_rec)
@@ -122,9 +122,9 @@ if __name__ == "__main__":
         pots[i] = ewald_pot2(d, dvec)
         forces[i] = ewald_force(d, dvec, 1)[0]
     xs_prime = np.arange(1.005, 2.005, 0.01)
-    force_inte[0] = pots[0] + 0.005 * forces[0]
+    force_inte[0] = pots[0] - 0.005 * forces[0]
     for i in range(1, 100):
-        force_inte[i] = force_inte[i - 1] + forces[i] * 0.01
+        force_inte[i] = force_inte[i - 1] - forces[i] * 0.01
     plt.plot(xs, pots, label='ewald_pot')
     plt.plot(xs, forces, label='ewald_force')
     plt.plot(xs_prime, force_inte, label='integrated_pot')
