@@ -23,7 +23,8 @@ def test_gradient(n_points, start, end, epsilon_lj, sigma_lj, switch_start_lj, c
     # d for every element in distances
     potential = np.zeros(len(distances))
     for i in range(len(distances)):
-        potential[i] = lennardjones.potential(distance_vectors(np.array([[distances[i], 0],[0, 0]])))[0]
+        potential[i] = lennardjones.calc_potential(
+                distance_vectors(np.array([[distances[i], 0],[0, 0]]), i))[0]
 
     # calculate the corresponding gradient by interpolation, mult by -1
     gradient_np = - 1 * np.gradient(potential, distances)
@@ -32,6 +33,8 @@ def test_gradient(n_points, start, end, epsilon_lj, sigma_lj, switch_start_lj, c
     # on second particle with force methond from lennard_jones.py
     gradient_calc = np.zeros(len(distances))
     for i in range(len(distances)):
-        gradient_calc[i] = lennardjones.force(distance_vectors(np.array([[0, 0],[distances[i], 0]])))[1,0]
+        gradient_calc[i] = lennardjones.calc_force(
+                distance_vectors(np.array([[0, 0],[distances[i], 0]]), i))[1,0]
+                
     # test both gradients
     np.testing.assert_allclose(gradient_np, gradient_calc, rtol=1E-2, atol=2E-5)

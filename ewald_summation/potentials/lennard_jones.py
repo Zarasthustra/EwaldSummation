@@ -29,8 +29,9 @@ class LennardJones:
             x[0] = 0
         return x[0]
 
-    def potential(self, x):
+    def calc_potential(self, frame):
         # initialize output as array with distances and corresponding sigma, epsilon along axis=2
+        x = frame.distance_vectors
         output = np.zeros((x.shape[0], x.shape[1], 3))
         output[:, :, 0] = np.linalg.norm(x, axis=-1)
         output[:, :, 1] = self.sigma_arr
@@ -57,9 +58,10 @@ class LennardJones:
                 x[: self.n_dim] = 0
         return x[: self.n_dim]
 
-    def force(self, x):
+    def calc_force(self, frame):
         # initialize output as array with distances  and corresponding
         # distanvce vecotors, sigma, epsilon along axis=2
+        x = frame.distance_vectors
         output = np.zeros((x.shape[0], x.shape[1], 3 + self.n_dim))
         output[:, :, 0] = np.linalg.norm(x, axis=-1)
         output[:, :, 1 : self.n_dim + 1] = x

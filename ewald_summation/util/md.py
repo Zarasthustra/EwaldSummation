@@ -40,42 +40,50 @@ class MD:
         self.global_potentials = []
         self.pairwise_potentials = []
         self.coulumb_potentials = []
+        self.lennard_jones_potentials = []
 
     def add_global_potential(self, new_global_potential):
-        # check
         self.global_potentials.append(new_global_potential)
 
     def add_pairwise_potential(self, new_pairwise_potential):
-        # check
         self.pairwise_potentials.append(new_pairwise_potential)
 
     def add_lennard_jones_potential(self):
-        # check
         self.lennard_jones = es.potentials.LennardJones(self.config)
-        self.pairwise_potentials.append(self.lennard_jones.force)
+        self.lennard_jones_potentials.append(self.lennard_jones)
 
     def add_coulumb_potential(self, new_coulumb_potential):
-        # check
         self.coulumb_potentials.append(new_coulumb_potential)
 
-    def sum_force(self, q):
+    def sum_force(self, q, step):
         forces = [pot.calc_force(q, self.config) for pot in self.global_potentials]
-        try:
-            forces.append(self.lennard_jones.force(self.distance_vectors(q)))
-        except:
-            pass
-        # TODO: include other potentials
-        return np.sum(forces, axis = 0)
+        forces.extend([pot.calc_force(self.distance_vectors(q, step))
+                                      for pot in self.lennard_jones_potentials])
+        forces.extend([pot.calc_force(self.distance_vectors(q, step))
+                                      for pot in self.coulumb_potentials])
+        return np.sum(forces, axis=0)
 
-    def sum_potential(self, q):
+    def sum_potential(self, q, step):
         potentials = [pot.calc_potential(q, self.config) for pot in self.global_potentials]
-        # TODO: include other potentials
-        return np.sum(potentials, axis = 0)
+        potentials.extend([pot.calc_potential(self.distance_vectors(q, step))
+                                              for pot in self.lennard_jones_potentials])
+        potentials.extend([pot.calc_potential(self.distance_vectors(q, step))
+                                              for pot in self.coulumb_potentials])
+        return np.sum(potentials, axis=0)
 
-    def run_step(self):
-        next_frame = self.step_runner.run(self.sum_force, self.sum_potential, self.traj.get_current_frame(), self.traj.make_new_frame())
+    def run_step(self, step):
+        next_frame = self.step_runner.run(self.sum_force,
+                                          self.sum_potential,
+                                          self.traj.get_current_frame(),
+                                          self.traj.make_new_frame(),
+                                          step,
+                                          )
         self.traj.set_new_frame(next_frame)
 
     def run_all(self):
-        for _ in range(self.traj.current_frame_num, self.n_steps):
-            self.run_step()
+        # step runner initiation
+        self.step_runner.init(self.phy_world, self.config)
+
+        # run sim for n_steps
+        for step in range(self.traj.current_frame_num, self.n_steps):
+            self.run_step(step)

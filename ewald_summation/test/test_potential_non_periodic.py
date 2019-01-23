@@ -17,6 +17,6 @@ def test_potential(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj):
     switch_width_lj = cutoff_lj - switch_start_lj
     distance_vectors = es.distances.DistanceVectors(simu_config)
     lennardjones = es.potentials.LennardJones(simu_config)
-    potential1 = 0.5 * np.sum(lennardjones.potential(distance_vectors(x)))
+    potential1 = 0.5 * np.sum(lennardjones.calc_potential(distance_vectors(x, 0)))
     potential2 = es.potentials.lj_potential_total(x)
     np.testing.assert_allclose(potential1, potential2)

@@ -17,7 +17,8 @@ def test_distance_vectors_periodic(x, l_box):
     distance_vectors_non_periodic = es.distances.DistanceVectors(simu_config)
     simu_config.PBC = True
     distance_vectors_periodic = es.distances.DistanceVectors(simu_config)
-    np.testing.assert_almost_equal(distance_vectors_periodic(x), distance_vectors_non_periodic(x))
+    np.testing.assert_almost_equal(distance_vectors_periodic(x, 0).distance_vectors,
+                                   distance_vectors_non_periodic(x, 1).distance_vectors)
 
 
 # test if 1 particle is outside teh box
@@ -34,4 +35,5 @@ def test_distance_vectors_periodic(x1, x2, l_box):
     distance_vectors_non_periodic = es.distances.DistanceVectors(simu_config)
     simu_config.PBC = True
     distance_vectors_periodic = es.distances.DistanceVectors(simu_config)
-    np.testing.assert_almost_equal(distance_vectors_periodic(x1), distance_vectors_non_periodic(x2))
+    np.testing.assert_almost_equal(distance_vectors_periodic(x1, 0).distance_vectors,
+                                   distance_vectors_non_periodic(x2, 1).distance_vectors)
