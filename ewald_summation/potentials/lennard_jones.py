@@ -6,6 +6,7 @@ import math
 class LennardJones:
     def __init__(self, config):
         self.n_dim = config.n_dim
+        self.neighbour = config.neighbour
         # calculate array for epsilon where the value of element i,j corresponds to the value
         # for particles i,j of distance_vectors array according to mixing condition
         # epsilon_ij = sqrt(epsilon_i * epsilon_j)
@@ -33,14 +34,24 @@ class LennardJones:
         return output
 
     def calc_force(self, current_frame):
-        # calls numba function outside of class namespace
-        output = lj_force_numba(current_frame.distances,
-                          current_frame.distances_squared,
-                          current_frame.distance_vectors,
-                          self.sigma, self.epsilon,
-                          self.switch_width,
-                          self.cutoff,
-                          )
+        # calls numba function outside of class namespace, for non neighbour
+        if self.neighbour:
+            output = lj_force_numba_neighbour(current_frame.distances,
+                                              current_frame.distances_squared,
+                                              current_frame.distance_vectors,
+                                              current_frame.array_index,
+                                              self.sigma, self.epsilon,
+                                              self.switch_width,
+                                              self.cutoff,
+                                              )
+        else:
+            output = lj_force_numba(current_frame.distances,
+                              current_frame.distances_squared,
+                              current_frame.distance_vectors,
+                              self.sigma, self.epsilon,
+                              self.switch_width,
+                              self.cutoff,
+                              )
         return output
 
     def potential_neighbour(self, x, distance_vectors):
@@ -104,6 +115,18 @@ def lj_potential_numba(distances, distances_squared, sigma, epsilon, switch_widt
             output[j] += pot
     return output
 
+@njit()
+def lj_potential_numba_neighbour(distances, distances_squared, array_index, sigma, epsilon, switch_width, cutoff):
+    switch_start = cutoff - switch_width
+    output = np.zeros(len(distances))
+    for i in range(len(distances)):
+        for j in range(i, len(distances)):
+            sigma_mixed = 0.5 * (sigma[i] + sigma[array_index[i, j]])
+            epsilon_mixed = math.sqrt(epsilon[i] * epsilon[array_index[i, j]])
+            pot = lj_potential_pairwise_numba(distances[i, j], distances_squared[i, j], sigma_mixed,
+                                              switch_width, epsilon_mixed, switch_start, cutoff)
+            output[i] += pot
+    return output
 
 # calculate force using numba, therefor can not be class method
 @njit(parallel=True)
@@ -142,4 +165,18 @@ def lj_force_numba(distances, distances_squared, distance_vectors, sigma, epsilo
             force = force_r_part * distance_vectors[i, j]
             output[i, :] += force
             output[j, :] -= force
+    return output
+
+@njit()
+def lj_force_numba_neighbour(distances, distances_squared, distance_vectors, array_index, sigma, epsilon, switch_width, cutoff):
+    switch_start = cutoff - switch_width
+    output = np.zeros((distances.shape[0], distance_vectors.shape[2]))
+    for i in range(distances.shape[0]):
+        for j in range(distances.shape[1]):
+            sigma_mixed = 0.5 * (sigma[i] + sigma[array_index[i, j]])
+            epsilon_mixed = math.sqrt(epsilon[i] * epsilon[array_index[i, j]])
+            force_r_part = lj_force_pairwise_numba(distances[i, j], distances_squared[i, j], sigma_mixed,
+                                                   switch_width, epsilon_mixed, switch_start, cutoff)
+            force = force_r_part * distance_vectors[i, j]
+            output[i, :] += force
     return output

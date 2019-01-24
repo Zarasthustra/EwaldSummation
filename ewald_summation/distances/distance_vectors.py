@@ -92,78 +92,91 @@ class DistanceVectors:
             # the new head of the cell
             # is the current particle
             head[cell_index] = i
+
         # define lists as class objects
         self.head = head
         self.neighbour = neighbour
         self.cell_indexes = cell_indexes
-        self.n_particles_cell = n.n_particles_cell
+        self.n_particles_cell = n_particles_cell
 
-    def distance_vectors_neighbour_list(self, x, i):
+    def distance_vectors_neighbour_list(self, x):
         n_cells = np.array(self.n_cells)
-        cell_index = self.cell_indexes[i]
-        index_ijk = [0] * self.n_dim
+        indexes_ijk = np.zeros((self.n_particles, self.n_dim))
+        head_indexes_arr = np.zeros((self.n_particles, 3**self.n_dim), dtype=int)
 
-        # calculate cell index for i as i,j,k
-        index_i = int(cell_index % n_cells[0])
-        if self.n_dim == 2:
-            index_j = int(cell_index / n_cells[0])
-        if self.n_dim == 3:
-            index_j = int((cell_index % (n_cells[0] * n_cells[1])) / n_cells[0])
-            index_k = int(cell_index / (n_cells[0] * n_cells[1]))
+        # calculate all cell indexes as index_ijk list
+        # calculate all corresponding head_indexes as list over all neigbouring cells
+        for i in range(self.n_particles):
+            cell_index = self.cell_indexes[i]
 
-        # create array with all cell indexes off all neighbouring cells
-        if self.n_dim == 2:
-            head_indexes = self.cell_indexes_arr[index_i : index_i + 3,
-                                                 index_j : index_j + 3]
-        if self.n_dim == 3:
-            head_indexes = self.cell_indexes_arr[index_i : index_i + 3,
-                                                 index_j : index_j + 3,
-                                                 index_k : index_k + 3]
-        head_indexes = head_indexes[head_indexes >= 0].astype(int)
+            # calculate cell index for i as i,j,k
+            index_i = int(cell_index % n_cells[0])
+            if self.n_dim == 2:
+                index_j = int(cell_index / n_cells[0])
+            if self.n_dim == 3:
+                index_j = int((cell_index % (n_cells[0] * n_cells[1])) / n_cells[0])
+                index_k = int(cell_index / (n_cells[0] * n_cells[1]))
 
-        # get distance vectors for particle i with all particles in box and neighbour boxes
-        # get lists for corresponding sigma and epsilon with mixing condition
-        distance_vectors = np.array([])
-        array_index_list = []
-        for j in range(len(head_indexes)):
-            list_index = self.head[head_indexes[j]]
-            while list_index != -1:
+            # create array with all cell indexes off all neighbouring cells
+            if self.n_dim == 2:
+                head_indexes = self.cell_indexes_arr[index_i : index_i + 3,
+                                                     index_j : index_j + 3]
+            if self.n_dim == 3:
+                head_indexes = self.cell_indexes_arr[index_i : index_i + 3,
+                                                     index_j : index_j + 3,
+                                                     index_k : index_k + 3]
+            head_indexes_arr[i, :] = head_indexes.reshape(-1)
 
-                # append distance_vectors list
-                distance_vector_ij = x[i, :] - x[list_index, :]
-                distance_vectors = np.append(distance_vectors, distance_vector_ij)
+            # calculate maximum number of particle interactions
+            max_interactions_global = 0
+            for i in range(head_indexes_arr.shape[0]):
+                max_interactions = 0
+                for j in range(head_indexes_arr.shape[1]):
+                    max_interactions += self.n_particles_cell[head_indexes_arr[i, j]]
+                    if max_interactions > max_interactions_global:
+                        max_interactions_global = max_interactions
 
-                # append list index list, gvining information for which particle the
-                # distance vector was calculated
-                array_index_list.append(list_index)
-
-                # update list index variable for calculation to jump to next particle
-                list_index = self.neighbour[list_index]
-
-        #reshape distance_vectors array to propter shape, make entire output ndarray
-        distance_vectors = distance_vectors.reshape(int(distance_vectors.size / self.n_dim), self.n_dim)
-        array_index_list = np.array(array_index_list)
-        return output, array_index_list
+        distance_vectors_output = np.zeros((self.n_particles, max_interactions_global, self.n_dim))
+        array_index_output = np.zeros((self.n_particles, max_interactions_global), dtype=int)
+        for i in range(self.n_particles):
+            # get distance vectors for particle i with all particles in box and neighbour boxes
+            # get lists for corresponding sigma and epsilon with mixing condition
+            n_iter = 0
+            for j in range(len(head_indexes_arr[i, :])):
+                if head_indexes_arr[i, j] >= 0:
+                    # print(head_indexes_arr[i, j])
+                    list_index = self.head[head_indexes_arr[i, j]]
+                    # print(list_index)
+                    while list_index != -1:
+                        # append distance_vectors list
+                        distance_vectors_output[i, n_iter, :] = x[i, :] - x[list_index, :]
+                        # append list index list, gvining information for which particle the
+                        # distance vector was calculated
+                        array_index_output[i, n_iter] = list_index
+                        # update list index variable for calculation to jump to next particle
+                        # count number iterations
+                        list_index = self.neighbour[list_index]
+                        n_iter += 1
+        return distance_vectors_output, array_index_output
 
     def call_function(self, x, step):
         # compute frame obj, if not stored for this step in iteration already.
         if self.current_frame.step == step:
-
         # return stored frame obj
             return self.current_frame
         else:
-
             # set set variable in frame
             self.current_frame.step = step
-
             # update current_frame
-            if self.neighbour_flag:
-                self.distance_vectors = self.distance_vectors_neighbour_list(x, i)
+            if self.neighbour:
+                self.cell_linked_neighbour_list(x)
+                distance_vectors, array_index = self.distance_vectors_neighbour_list(x)
+                self.current_frame.store_frame(distance_vectors)
+                self.current_frame.array_index = array_index
             elif self.PBC:
                 self.current_frame.store_frame(self.distance_vectors_periodic(x))
             else:
                 self.current_frame.store_frame(self.distance_vectors_non_periodic(x))
-
             # return updated current_frame
             return self.current_frame
 

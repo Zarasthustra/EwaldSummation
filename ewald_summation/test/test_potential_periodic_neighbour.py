@@ -9,10 +9,10 @@ import ewald_summation as es
     ])
 def test_potential_neighbour(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj, l_box, l_cell):
     simu_config = es.SimuConfig(n_dim=x.shape[1], n_particles=x.shape[0], l_box=l_box, l_cell=l_cell,
-    switch_start_lj=switch_start_lj, cutoff_lj=cutoff_lj, neighbour=True)
+    switch_start_lj=switch_start_lj, PBC=True, cutoff_lj=cutoff_lj, neighbour=True)
     distance_vectors = es.distances.DistanceVectors(simu_config)
     lennard_jones = es.potentials.LennardJones(simu_config)
-    force1 = lennard_jones.calc_force(distance_vectors(x, 0))
+    potential1 = lennard_jones.calc_potential(distance_vectors(x, 0))
     distance_vectors.neighbour_flag = False
-    force2 = lennard_jones.calc_force(distance_vectors(x, 0))
-    np.testing.assert_allclose(force1, force2)
+    potential2 = lennard_jones.calc_potential(distance_vectors(x, 0))
+    np.testing.assert_allclose(potential1, potential2)
