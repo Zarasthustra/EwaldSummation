@@ -4,8 +4,8 @@ import ewald_summation as es
 
 
 @pytest.mark.parametrize('x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj, l_box, l_cell', [
-    (np.random.uniform(0, 6.9, (150, 2)), 1, 1, 2.5, 3.5, [14, 14], 3.5),
-    (np.random.uniform(0, 6.9, (150, 3)), 1, 1, 2.5, 3.5, [14, 14, 14], 3.5),
+    (np.random.uniform(-2, 20, (150, 2)), 1, 1, 2.5, 3.5, [14, 14], 3.5),
+    (np.random.uniform(-2, 20, (150, 3)), 1, 1, 2.5, 3.5, [14, 14, 14], 3.5),
     ])
 def test_potential_neighbour(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj, l_box, l_cell):
     simu_config = es.SimuConfig(n_dim=x.shape[1], n_particles=x.shape[0], l_box=l_box, l_cell=l_cell,

@@ -67,6 +67,7 @@ class DistanceVectors:
         return distance_vectors
 
     def cell_linked_neighbour_list(self, x):
+        x = np.mod(x, self.l_box)
         self.neighbour_flag = True
         n_particles = x.shape[0]
         n_cells = self.n_cells
@@ -100,9 +101,10 @@ class DistanceVectors:
         self.n_particles_cell = n_particles_cell
 
     def distance_vectors_neighbour_list(self, x):
+        x = np.mod(x, self.l_box)
         n_cells = np.array(self.n_cells)
         indexes_ijk = np.zeros((self.n_particles, self.n_dim))
-        head_indexes_arr = np.zeros((self.n_particles, 3**self.n_dim), dtype=int)
+        head_indexes_arr = np.zeros((self.n_particles, 3**self.n_dim), dtype=np.int16)
 
         # calculate all cell indexes as index_ijk list
         # calculate all corresponding head_indexes as list over all neigbouring cells
