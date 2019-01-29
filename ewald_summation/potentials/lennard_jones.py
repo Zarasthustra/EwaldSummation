@@ -24,13 +24,22 @@ class LennardJones:
         self.switch_width = self.cutoff - self.switch_start
 
     def calc_potential(self, current_frame):
-        # calls numba function outside of class namespace
-        output = lj_potential_numba(current_frame.distances,
-                          current_frame.distances_squared,
-                          self.sigma, self.epsilon,
-                          self.switch_width,
-                          self.cutoff,
-                          )
+        # calls numba function outside of class namespace, for non neighbour
+        if self.neighbour:
+            output = lj_potential_numba_neighbour(current_frame.distances,
+                                                  current_frame.distances_squared,
+                                                  current_frame.array_index,
+                                                  self.sigma, self.epsilon,
+                                                  self.switch_width,
+                                                  self.cutoff,
+                                                  )
+        else:
+            output = lj_potential_numba(current_frame.distances,
+                                        current_frame.distances_squared,
+                                        self.sigma, self.epsilon,
+                                        self.switch_width,
+                                        self.cutoff,
+                                        )
         return output
 
     def calc_force(self, current_frame):
@@ -54,31 +63,6 @@ class LennardJones:
                               )
         return output
 
-    def potential_neighbour(self, x, distance_vectors):
-        head = distance_vectors.head
-        neighbour = distance_vectors.neighbour
-        cell_indexes = distance_vectors.cell_indexes
-        output = np.zeros(x.shape[0])
-        for i in range(x.shape[0]):
-            head_index = cell_indexes[i]
-            temp_arr = distance_vectors(x, i)
-            temp_arr = np.delete(temp_arr, np.s_[1 : self.n_dim + 1], 1)
-            temp_arr[:, 0] = np.apply_along_axis(self.potential_along_axis, 1, temp_arr)
-            output[i] = np.sum(temp_arr[:, 0])
-        return output
-
-    def force_neighbour(self, x, distance_vectors):
-        head = distance_vectors.head
-        neighbour = distance_vectors.neighbour
-        cell_indexes = distance_vectors.cell_indexes
-        output = np.zeros((x.shape[0], self.n_dim))
-        for i in range(x.shape[0]):
-            head_index = cell_indexes[i]
-            temp_arr = distance_vectors(x, i)
-            temp_arr[:, : self.n_dim] = np.apply_along_axis(self.force_along_axis, 1, temp_arr)
-            output[i, :] = np.sum(temp_arr[:, : self.n_dim], axis=0)
-        return output
-
 
 # calculate potential using numba, therefor can not be class method
 @njit(parallel=True)
@@ -86,27 +70,26 @@ def lj_potential_pairwise_numba(distance, distance_squared, sigma, epsilon,
                                 switch_width, switch_start, cutoff):
     # calculate potential between 0 and switch region
     if(distance <= switch_start) and (distance > 0):
-        output = 4. * epsilon * sigma**6 / distance_squared**3 * (sigma**6 / distance_squared**3 - 1)
-        return output
+        return (4. * epsilon * sigma**6 / distance_squared**3
+                * (sigma**6 / distance_squared**3 - 1)
+                )
 
     # calculate potential in switch region
-    elif (distance > switch_start) and (distance <= cutoff):
-        output = (4. * epsilon * sigma**6 / distance_squared**3 * (sigma**6 / distance_squared**3 - 1)
-                 * (2 * ((distance - cutoff) / switch_width)**3
-                 + 3 * ((distance - cutoff) / switch_width)**2)
-                 )
-        return output
+    if (distance > switch_start) and (distance <= cutoff):
+        return (4. * epsilon * sigma**6 / distance_squared**3 * (sigma**6 / distance_squared**3 - 1)
+               * (2 * ((distance - cutoff) / switch_width)**3
+               + 3 * ((distance - cutoff) / switch_width)**2)
+               )
 
     # set rest to 0
-    else:
-        return 0.
+    return 0.
 
 @njit()
 def lj_potential_numba(distances, distances_squared, sigma, epsilon, switch_width, cutoff):
     switch_start = cutoff - switch_width
     output = np.zeros(len(distances))
     for i in range(len(distances)):
-        for j in range(i, len(distances)):
+        for j in range(i + 1, len(distances)):
             sigma_mixed = 0.5 * (sigma[i] + sigma[j])
             epsilon_mixed = math.sqrt(epsilon[i] * epsilon[j])
             pot = lj_potential_pairwise_numba(distances[i, j], distances_squared[i, j], sigma_mixed,
@@ -115,12 +98,12 @@ def lj_potential_numba(distances, distances_squared, sigma, epsilon, switch_widt
             output[j] += pot
     return output
 
-@njit()
+# @njit()
 def lj_potential_numba_neighbour(distances, distances_squared, array_index, sigma, epsilon, switch_width, cutoff):
     switch_start = cutoff - switch_width
     output = np.zeros(len(distances))
-    for i in range(len(distances)):
-        for j in range(i, len(distances)):
+    for i in range(distances.shape[0]):
+        for j in range(distances.shape[1]):
             sigma_mixed = 0.5 * (sigma[i] + sigma[array_index[i, j]])
             epsilon_mixed = math.sqrt(epsilon[i] * epsilon[array_index[i, j]])
             pot = lj_potential_pairwise_numba(distances[i, j], distances_squared[i, j], sigma_mixed,
@@ -157,7 +140,7 @@ def lj_force_numba(distances, distances_squared, distance_vectors, sigma, epsilo
     switch_start = cutoff - switch_width
     output = np.zeros((distances.shape[0], distance_vectors.shape[2]))
     for i in range(len(distances)):
-        for j in range(i, len(distances)):
+        for j in range(i + 1, len(distances)):
             sigma_mixed = 0.5 * (sigma[i] + sigma[j])
             epsilon_mixed = math.sqrt(epsilon[i] * epsilon[j])
             force_r_part = lj_force_pairwise_numba(distances[i, j], distances_squared[i, j], sigma_mixed,
