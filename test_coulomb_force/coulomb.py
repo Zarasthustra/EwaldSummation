@@ -103,7 +103,7 @@ if __name__ == "__main__":
     n_dim = 3
     resolution = 6
     l_box=2.
-    grid=np.array( list (product(range(0,2), repeat=3)))
+    grid=np.array(list(product(range(0,2), repeat=3)))
     q = 1. * grid
     charge_vector = grid.sum(axis=1)%2*2-1
     print("Madelung constant for salt:", -ewald_pot2(*distances()) / 4)
@@ -125,9 +125,12 @@ if __name__ == "__main__":
     force_inte[0] = pots[0] - 0.005 * forces[0]
     for i in range(1, 100):
         force_inte[i] = force_inte[i - 1] - forces[i] * 0.01
+    plt.figure(dpi=150)
     plt.plot(xs, pots, label='ewald_pot')
     plt.plot(xs, forces, label='ewald_force')
     plt.plot(xs_prime, force_inte, label='integrated_pot')
+    plt.ylabel('Potential/Force')
+    plt.xlabel('x coordinate of particle 1')
     plt.legend()
     plt.grid()
     plt.show()
