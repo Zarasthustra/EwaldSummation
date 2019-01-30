@@ -25,7 +25,7 @@ def StupidInitializer(l_box, n_particles):
     return masses, charges, q_0, v_0 * masses[:, None]
 
 
-test_config = es.SimuConfig(n_dim=1, l_box=[1.], n_particles=2, n_steps=1000, timestep=0.001, temp=300)
+test_config = es.SimuConfig(n_dim=1, l_box=[1.], n_particles=2, n_steps=1000, timestep=0.001, temp=1, l_cell = 0.5)
 test_md = es.MD(es.PhysWorld(), test_config, StupidInitializer, es.step_runners.Langevin(damping=0.))
 test_md.add_global_potential(NullPotential())
 test_md.run_all()

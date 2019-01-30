@@ -6,6 +6,9 @@ import math
 class LennardJones:
     def __init__(self, config):
         self.n_dim = config.n_dim
+        self.n_particles = config.n_particles
+        self.sigma_lj = [config.sigma_lj] * self.n_particles
+        self.epsilon_lj = [config.epsilon_lj] * self.n_particles
         self.neighbour = config.neighbour
         # calculate array for epsilon where the value of element i,j corresponds to the value
         # for particles i,j of distance_vectors array according to mixing condition
@@ -17,7 +20,7 @@ class LennardJones:
         # self.sigma_arr = (0.5 * (np.array(config.sigma_lj)[:, None] + np.array(config.sigma_lj)))
 
         # precomputing mixing conditions disabled as they did not increase preformance
-        self.sigma = config.sigma_lj
+        self.sigma = config.sigma_lj * [1] * self.n_particles
         self.epsilon = config.epsilon_lj
         self.cutoff = config.cutoff_lj
         self.switch_start = config.switch_start_lj

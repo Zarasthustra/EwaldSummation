@@ -4,7 +4,6 @@ import ewald_summation as es
 
 class MD:
     def __init__(self, physical_world, simu_config, particle_initializer, step_runner):
-        # TODO: sanity checks
         self.phy_world = physical_world
         self.config = simu_config
         # step runner, e.g. Langevin integrator or MCMC
@@ -18,7 +17,6 @@ class MD:
         self.temp = simu_config.temp
         self.timestep = simu_config.timestep
         self.n_steps, self.n_particles, self.n_dim = simu_config.n_steps, simu_config.n_particles, simu_config.n_dim
-
         # distance_vectors obj
         self.distance_vectors = es.distances.DistanceVectors(self.config)
 
@@ -27,7 +25,9 @@ class MD:
         initial_frame = self.traj.get_current_frame()
         self.config.masses, self.config.charges, initial_frame.q, initial_frame.p = particle_initializer(self.l_box, self.n_particles)
         self.masses, self.charges = self.config.masses, self.config.charges
-
+        # start sanity checks
+        check = es.util.SanityChecks(self.config, particle_initializer, self.masses, self.charges)
+        check.sanity_checks()
         # step runner initiation
         self.step_runner.init(self.phy_world, self.config)
 
@@ -41,10 +41,10 @@ class MD:
         self.pairwise_potentials = []
         self.coulumb_potentials = []
         self.lennard_jones_potentials = []
-
+           
     def add_global_potential(self, new_global_potential):
         self.global_potentials.append(new_global_potential)
-
+     
     def add_pairwise_potential(self, new_pairwise_potential):
         self.pairwise_potentials.append(new_pairwise_potential)
 
