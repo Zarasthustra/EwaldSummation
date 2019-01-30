@@ -3,7 +3,8 @@ import numpy as np
 
 class SimuConfig:
     def __init__(self, n_dim=3, l_box=[1.,1.,1.], PBC=False, n_particles=1, n_steps=1000,\
-     timestep=1e-10, neighbour=False, l_cell=1, temp=300, switch_start_lj=2.5, cutoff_lj=3.5):
+     timestep=1e-10, neighbour=False, l_cell=1, temp=1, mole_fraction=0.5, \
+     switch_start_lj=2.5, cutoff_lj=3.5, sigma_lj=1, epsilon_lj=1):
         # TODO: sanity checks
         self.l_box = l_box
         self.PBC = PBC
@@ -18,7 +19,8 @@ class SimuConfig:
         self.neighbour = neighbour
         self.l_cell = l_cell
         # Temp
-        self.sigma_lj = [1] * self.n_particles
-        self.epsilon_lj = [1] * self.n_particles
+        self.mole_fraction = mole_fraction       
         self.switch_start_lj = switch_start_lj
         self.cutoff_lj = cutoff_lj
+        self.sigma_lj = sigma_lj
+        self.epsilon_lj = epsilon_lj
