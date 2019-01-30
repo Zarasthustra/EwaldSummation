@@ -28,6 +28,9 @@ class SanityChecks:
         if isinstance(self.n_dim, int) == False:
             raise TypeError("n_dim has to be an integer")
 
+        if self.n_dim==1:
+            print("Warning: not all features work in 1D")  
+
         if self.n_dim in [1,2,3]:
             pass
         else:
