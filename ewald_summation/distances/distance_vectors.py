@@ -159,6 +159,9 @@ class DistanceVectors:
                         # count number iterations
                         list_index = self.neighbour[list_index]
                         n_iter += 1
+        np.mod(distance_vectors_output, self.l_box, out=distance_vectors_output)
+        mask = distance_vectors_output > np.divide(self.l_box, 2.)
+        distance_vectors_output += mask * -self.l_box
         return distance_vectors_output, array_index_output
 
     def call_function(self, x, step):
