@@ -71,9 +71,10 @@ class SanityChecks:
             
         if isinstance(self.l_cell, (int,float))==False:
             raise TypeError("l_cell has to be an int,float")
-            
-        if any(np.array(self.l_box) % self.l_cell != np.zeros(self.n_dim)):
-            raise ValueError("l_box has to be divisible by l_cell")
+        
+        for _ in range(len(self.l_box)):
+            if self.l_box[_] % self.l_cell != 0:
+                raise ValueError("l_box has to be divisible by l_cell")
             
         if isinstance(self.sigma_lj, (int,float))==False:
             raise TypeError("sigma_lj has to be a int or float")

@@ -41,13 +41,16 @@ class MD:
         self.pairwise_potentials = []
         self.coulumb_potentials = []
         self.lennard_jones_potentials = []
-           
-    def add_global_potential(self, new_global_potential):
-        self.global_potentials.append(new_global_potential)
-     
-    def add_pairwise_potential(self, new_pairwise_potential):
-        self.pairwise_potentials.append(new_pairwise_potential)
-
+    
+    #def add_observable(self, new_observable):
+    #    self.observables.append(new_observable)
+    #
+    #def add_global_potential(self, new_global_potential):
+    #    self.global_potentials.append(new_global_potential)
+    # 
+    #def add_pairwise_potential(self, new_pairwise_potential):
+    #    self.pairwise_potentials.append(new_pairwise_potential)
+    
     def add_lennard_jones_potential(self):
         self.lennard_jones = es.potentials.LennardJones(self.config)
         self.lennard_jones_potentials.append(self.lennard_jones)
