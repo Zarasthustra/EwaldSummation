@@ -17,10 +17,6 @@ class MD:
         self.temp = simu_config.temp
         self.timestep = simu_config.timestep
         self.n_steps, self.n_particles, self.n_dim = simu_config.n_steps, simu_config.n_particles, simu_config.n_dim
-        # frame at wich the sampling of the observables should start
-        self.start_sampling = simu_config.start_sampling
-        # frame intervall wich should be sampled
-        self.sampling_rate =  simu_config.sampling_rate
         # distance_vectors obj
         self.distance_vectors = es.distances.DistanceVectors(self.config)
 
@@ -51,7 +47,8 @@ class MD:
         
     def add_rad_dist_func(self):
     	self.rad_dist_func = es.observables.RadialDistributionFunction(self.config)
-
+    
+    def sample_observables(self)
     def add_global_potential(self, new_global_potential):
         self.global_potentials.append(new_global_potential)
      

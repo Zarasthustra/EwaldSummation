@@ -1,53 +1,45 @@
 import numpy as np
 from itertools import product
-from numba import jit
 
 class RadialDistributionFunction:
-    def __init__(self, config, qs):
-        self.qs = qs
-        self.l_box = config.l_box
+    def __init__(self, config):
+    	self.neighbour = config.neighbour
+    	self.n_steps = config.n_steps
+        self.l_box = np.array(config.l_box)
         self.n_particles = config.n_particles
         self.n_dim = config.n_dim
-    def g_r(self):
-        """
-        writes a .xyz format trajectory
-        qs = coordinates 
-        component_a = string for example "Na"
-        component_a = string for example "Cl"
-        """
-        ks = np.array(list(product(range(-1, 2), repeat=self.n_dim)))
-        ks = self.l_box * np.delete(ks, ks.shape[0] // 2, 0)
-        g_r,bins = radial_dist_func(self.qs,ks,self.n_dim,self.n_particles,self.l_box)
-        return g_r,bins
+        self.r_max = np.min(l_box) / 2
+        self.bin_res = 50
+        self.bin_width = self.r_max / self.bin_res
+        self.density = self.n_particles / np.prod(self.l_box)
+        self.func_called = 0
+        self.hist, self.g_r, self.delta_V = np.zeros(bin_res-1), \
+                                              np.zeros(bin_res-1), \
+                                              np.zeros(bin_res)
+        self.tril_vector = np.tril_indices(self.n_particles,-1)
+        self.bins = self.r_max / self.bin_res * np.arange(self.bin_res)
     
-def distances_not_PBC(q):
-    distance_vectors = q[:, None, :] - q[None, :, :]
-    return distance_vectors
+    def calc_radial_dist(self, current_frame)
+    	if self.neighbour:
+    		output = rad_dist_func_neighbour(current_frame.distances,
+                                          	 current_frame.array_index)
+		else:
+		    output = rad_dist_func_not_neighbour(current_frame.distances)
+		return output
 
-@jit(parallel=True)
-def radial_dist_func(qs,ks,n_dim,n_particles,l_box):
-    density = n_particles/np.prod(l_box)
-    bin_res = 50
-    r_max = np.min(l_box)
-    bin_width = r_max/bin_res
-    hist,g_r,delta_V = np.zeros(bin_res-1), np.zeros(bin_res-1), np.zeros(bin_res)
-    bins = r_max / bin_res * np.arange(bin_res)
-    tril_vector = np.tril_indices(n_particles,-1)
-    for _ in range(int(0.25*qs.shape[0]),qs.shape[0]):
-        dist= np.linalg.norm(distances_not_PBC(qs[_]%l_box), axis=2)[tril_vector]
-        for k in ks:
-            periodic_dist = np.linalg.norm(distances_not_PBC(qs[_]%l_box)+k,axis=2)[tril_vector]
-            dist = np.append(dist,periodic_dist)
-        #print('dist')
-        #print(dist)
-        #print('qs')
-        #print(qs[_])
-        hist,trash = np.histogram(dist, bins)
-        g_r +=  hist
-    if n_dim==3:
-        delta_V = 2./3. * np.pi * ((bins+bin_width)**3. -bins**3)
-    if n_dim==2:
-        delta_V = 0.5 * np.pi * ((bins+bin_width)**2. -bins**2)
-    delta_V = np.delete(delta_V,-1)
-    bins = np.delete(bins,-1) + 0.5 * bin_width
-    return g_r / density / n_particles / delta_V / (qs.shape[0]-int(0.25*qs.shape[0])), bins
+	def rad_dist_func_not_neighbour(self, distance_vectors):
+	    dist = distances[self.tril_vector]
+	    self.hist, trash = np.histogram(dist, self.bins)
+	    g_r +=  hist
+	    func_called += 1
+	    if func_called = n_step
+	    #checks if its the last time
+			if n_dim==3:
+	    	    self.delta_V = 2./3. * np.pi * ((self.bins+self.bin_width)**3. -self.bins**3)
+	    	if n_dim==2:
+	    	    self.delta_V = 0.5 * np.pi * ((self.bins+self.bin_width)**2. -self.bins**2)
+	    	if n_dim==1:
+	    	    self.delta_V = 0.5 * bin_widht
+	    	delta_V = np.delete(delta_V,-1)
+	    	real_bins = np.delete(self.bins,-1) + 0.5 * self.bin_width
+	    	return g_r / self.density / self.n_particles / self.delta_V / func_called, real_bins
