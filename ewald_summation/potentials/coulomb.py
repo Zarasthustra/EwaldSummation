@@ -7,22 +7,34 @@ class Coulomb:
     def __init__(self, config):
         self.n_dim = config.n_dim
         assert self.n_dim == 3, "For other dimensions not implemented."
+        assert config.PBC, "Ewald sum only meaningful for periodic systems."
         self.l_box = config.l_box
         self.neighbour = config.neighbour
         # self.epsilon = config.epsilon_coulomb
         self.epsilon = 1. / (4. * np.pi)
         self.prefactor = 1. / (4. * np.pi * self.epsilon)
         self.charge_vector = config.charges
-        self.alpha = 1.
+        # optimal alpha and cutoff selections
+        # ref: http://protomol.sourceforge.net/ewald.pdf
+        accuracy = 1e-5
+        ratio_real_rec = 1.
+        V = self.l_box[0] * self.l_box[1] * self.l_box[2]
+        self.alpha = ratio_real_rec * np.sqrt(np.pi) * (config.n_particles / V / V) ** (1/6)
         # self.REAL_CUTOFF = config.cutoff_coulomb_real_sum
-        self.REAL_CUTOFF = 8
+        # self.REAL_CUTOFF = 8
+        self.REAL_CUTOFF = np.sqrt(-np.log(accuracy)) / self.alpha
         self.REAL_PERIODIC_REPEATS = np.clip(np.ceil(self.REAL_CUTOFF / self.l_box) - 1, 0, 5).astype(int)
         # self.REC_RESO = config.cutoff_coulomb_reci_sum
-        self.REC_RESO = 6
+        # self.REC_RESO = 6
+        self.REC_RESO = int(np.ceil(np.sqrt(-np.log(accuracy)) * 2 * self.alpha))
         self.precalc = self.Coulomb_PreCalc(self.l_box, self.charge_vector, self.REAL_PERIODIC_REPEATS,
                                             self.REC_RESO, self.alpha)
         self.neighbor_charge_frame_num = -1000  # For recalc detection
-        self.neighbor_charge_list = None
+        if(self.neighbour):
+            self.neighbor_charge_list = None
+        else:
+            # self.neighbor_charge_list = self.charge_vector[np.newaxis, :]
+            self.neighbor_charge_list = np.repeat(self.charge_vector[np.newaxis, :], config.n_particles, axis=0)
 
     class Coulomb_PreCalc:
         def __init__(self, l_box, charge_vector, REAL_PERIODIC_REPEATS, rec_resolution, alpha):
@@ -35,7 +47,8 @@ class Coulomb:
             self.v_self = -alpha / np.sqrt(np.pi) * np.sum(charge_vector**2)
 
     def calc_potential(self, q, current_frame):
-        self._check_new_frame(current_frame)
+        if(self.neighbour):
+            self._check_new_frame(current_frame)
         output = _ewald_pot2(q, current_frame.distances, current_frame.distance_vectors,
                              self.charge_vector, self.neighbor_charge_list, self.precalc,
                              alpha=self.alpha
@@ -44,7 +57,8 @@ class Coulomb:
         return output
 
     def calc_force(self, q, current_frame):
-        self._check_new_frame(current_frame)
+        if(self.neighbour):
+            self._check_new_frame(current_frame)
         output = _ewald_force(q, current_frame.distances, current_frame.distances_squared,
                              current_frame.distance_vectors, self.charge_vector,
                              self.neighbor_charge_list, self.precalc, alpha=self.alpha, n_particles=q.shape[0]
