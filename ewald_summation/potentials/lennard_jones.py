@@ -20,8 +20,8 @@ class LennardJones:
         # self.sigma_arr = (0.5 * (np.array(config.sigma_lj)[:, None] + np.array(config.sigma_lj)))
 
         # precomputing mixing conditions disabled as they did not increase preformance
-        self.sigma = config.sigma_lj * [1] * self.n_particles
-        self.epsilon = config.epsilon_lj
+        self.sigma = self.sigma_lj
+        self.epsilon = self.epsilon_lj
         self.cutoff = config.cutoff_lj
         self.switch_start = config.switch_start_lj
         self.switch_width = self.cutoff - self.switch_start
@@ -99,7 +99,7 @@ def lj_potential_numba(distances, distances_squared, sigma, epsilon, switch_widt
                                               switch_width, epsilon_mixed, switch_start, cutoff)
             output[i] += pot
             output[j] += pot
-    return output
+    return output.sum()
 
 # @njit()
 def lj_potential_numba_neighbour(distances, distances_squared, array_index, sigma, epsilon, switch_width, cutoff):
@@ -112,7 +112,7 @@ def lj_potential_numba_neighbour(distances, distances_squared, array_index, sigm
             pot = lj_potential_pairwise_numba(distances[i, j], distances_squared[i, j], sigma_mixed,
                                               switch_width, epsilon_mixed, switch_start, cutoff)
             output[i] += pot
-    return output
+    return output.sum()
 
 # calculate force using numba, therefor can not be class method
 @njit(parallel=True)

@@ -17,10 +17,6 @@ class MD:
         self.temp = simu_config.temp
         self.timestep = simu_config.timestep
         self.n_steps, self.n_particles, self.n_dim = simu_config.n_steps, simu_config.n_particles, simu_config.n_dim
-        # frame at wich the sampling of the observables should start
-        self.start_sampling = simu_config.start_sampling
-        # frame intervall wich should be sampled
-        self.sampling_rate =  simu_config.sampling_rate
         # distance_vectors obj
         self.distance_vectors = es.distances.DistanceVectors(self.config)
 
@@ -28,6 +24,8 @@ class MD:
         self.traj = Traj(self.config)
         initial_frame = self.traj.get_current_frame()
         self.config.masses, self.config.charges, initial_frame.q, initial_frame.p = particle_initializer(self.l_box, self.n_particles)
+        self.start_sampling = simu_config.start_sampling
+        self.sampling_rate = simu_config.sampling_rate
         self.masses, self.charges = self.config.masses, self.config.charges
         # start sanity checks
         check = es.util.SanityChecks(self.config, particle_initializer, self.masses, self.charges)
@@ -45,19 +43,15 @@ class MD:
         self.pairwise_potentials = []
         self.coulumb_potentials = []
         self.lennard_jones_potentials = []
-    
-    def add_observable(self, new_observable):
-        self.observables.append(new_observable)
         
-    def add_rad_dist_func(self):
-    	self.rad_dist_func = es.observables.RadialDistributionFunction(self.config)
-
+        
+           
     def add_global_potential(self, new_global_potential):
         self.global_potentials.append(new_global_potential)
      
     def add_pairwise_potential(self, new_pairwise_potential):
         self.pairwise_potentials.append(new_pairwise_potential)
-    
+
     def add_lennard_jones_potential(self):
         self.lennard_jones = es.potentials.LennardJones(self.config)
         self.lennard_jones_potentials.append(self.lennard_jones)
@@ -90,6 +84,10 @@ class MD:
                                           )
         self.traj.set_new_frame(next_frame)
 
+    def sample_rad_dist_func(self, step):
+        call_sample_func = es.observables.RadialDistributionFunction(self.config)
+        call_sample_func.calc_radial_dist(self.distance_vectors(self.traj.get_current_frame().q, step),step)
+        
     def run_all(self):
         # step runner initiation
         self.step_runner.init(self.phy_world, self.config)
@@ -97,4 +95,6 @@ class MD:
         # run sim for n_steps
         for step in range(self.traj.current_frame_num, self.n_steps):
             self.run_step(step)
-
+            if step >= self.start_sampling:
+                if step % self.sampling_rate == 0:
+                    self.sample_rad_dist_func(step)
