@@ -17,11 +17,12 @@ test_config = es.SimuConfig(n_dim=x.shape[1],
                             timestep=0.001,
                             temp=100,
                             PBC=False,
-                            neighbour=True,
+                            neighbour=False,
                             )
-lennard_jones = es.potentials.LennardJones(test_config)
-distance_vectors = es.distances.DistanceVectors(test_config)
-print(lennard_jones.calc_potential(distance_vectors(x, 0)))
+
+general_params = (x.shape[1], x.shape[0])
+lj_params = (2.5, 3.5, [1] * x.shape[1], [1] * x.shape[1])
+print(es.calc_potential(x, general_params, lj_params)
 # print(distance_vectors.head)
 # print(distance_vectors.neighbour)
 # print(distance_vectors.cell_indexes)

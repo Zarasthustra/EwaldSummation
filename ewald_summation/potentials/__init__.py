@@ -1,3 +1,3 @@
 from .lj import *
-from .lennard_jones import *
+from .calc_potential import *
 from .coulomb import *
