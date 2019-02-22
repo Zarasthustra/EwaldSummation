@@ -64,7 +64,7 @@ class DistanceVectors:
         np.mod(distance_vectors, self.l_box, out=distance_vectors)
         mask = distance_vectors > np.divide(self.l_box, 2.)
         distance_vectors += mask * -self.l_box
-        return distance_vectors
+        return distance_vectors 
 
     def cell_linked_neighbour_list(self, x):
         x = np.mod(x, self.l_box)

@@ -1,7 +1,7 @@
 import numpy as np
 from itertools import product
 
-class RadialDistributionFunction:
+class RadialDistributionFunctionOld:
     def __init__(self, config):
         self.neighbour = config.neighbour
         self.n_steps = config.n_steps
@@ -14,11 +14,15 @@ class RadialDistributionFunction:
         self.last_call = self.n_steps - self.start_sampling
         self.n_dim = config.n_dim
         self.r_max = np.min(self.l_box) / 2
-        self.bin_res = 70
+        if self.r_max >= 5:
+            self.r_max = 5
+        self.bin_res = 400
         self.bin_width = self.r_max / self.bin_res
         
-        self.tril_vector = np.tril_indices(self.n_particles,-1)
+        self.tril_vector = np.tril_indices(self.n_particles,-1)    
         self.bins = self.r_max / self.bin_res * np.arange(self.bin_res)
+    
+    store_hist = np.zeros(399)
     
     def calc_radial_dist(self, current_frame, step):
         if self.neighbour:
@@ -34,9 +38,7 @@ class RadialDistributionFunction:
         hist, trash = np.histogram(dist, self.bins)
         if step  == self.start_sampling + self.start_sampling % self.sampling_rate:
             print('initalize g_r')
-            np.save('g_r.npy', hist)
-        hist = hist + np.load('g_r.npy')
-        np.save('g_r.npy', hist)
+        self.store_hist += hist
         if step == self.last_call + self.start_sampling % self.sampling_rate: 
         #checks if its the last time
             delta_V = np.zeros(self.bin_res-1)
@@ -49,7 +51,7 @@ class RadialDistributionFunction:
                 print(self.delta_V)
             delta_V = np.delete(self.delta_V,-1)
             real_bins = np.delete(self.bins,-1) + 0.5 * self.bin_width
-            g_r = np.load('g_r.npy') / self.density / self.n_particles / delta_V / self.norm_factor
+            g_r = self.store_hist / self.density / self.n_particles / delta_V / self.norm_factor
             data = np.concatenate([[g_r],[real_bins]])
             print('save g_r')
             np.savetxt("g_r.dat", np.transpose(data), delimiter=" ")

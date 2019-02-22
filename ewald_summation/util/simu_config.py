@@ -2,9 +2,10 @@ import numpy as np
 
 
 class SimuConfig:
-    def __init__(self, n_dim=3, l_box=[1.,1.,1.], PBC=False, n_particles=1, n_steps=1000,\
+    def __init__(self, n_dim=3, l_box=[1.,1.,1.], PBC=True, n_particles=1, n_steps=1000,\
      timestep=1e-10, neighbour=False, l_cell=1, start_sampling=100, sampling_rate=10, temp=1,\
-     mole_fraction=0.5, switch_start_lj=2.5, cutoff_lj=3.5, sigma_lj=1, epsilon_lj=1):
+     mole_fraction=0.5, switch_start_lj=2.5, cutoff_lj=3.5, sigma_lj=1, epsilon_lj=1, 
+     p_kinds=[200,200,200]):
      
         # TODO: sanity checks
         self.l_box = l_box
@@ -13,8 +14,8 @@ class SimuConfig:
         self.n_particles = n_particles
         self.n_dim = n_dim
         # move these initializations to initializer
-        
-       	self.sampling_start = sampling_start
+        self.p_kinds = p_kinds
+       	self.start_sampling = start_sampling
        	self.sampling_rate = sampling_rate
         self.masses = None
         self.charges = None
