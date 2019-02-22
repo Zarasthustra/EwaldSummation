@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 import ewald_summation as es
+from scipy.special import erfc
 from itertools import product
 
 '''

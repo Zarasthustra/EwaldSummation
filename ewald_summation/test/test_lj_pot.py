@@ -12,11 +12,10 @@ import ewald_summation as es
     (np.random.uniform(-20, 20, (100, 3)), 1, 1, 2.5, 3.5),
     ])
 def test_potential(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj):
-    simu_config = es.SimuConfig(n_dim=x.shape[1], n_particles=x.shape[0],
-    switch_start_lj=switch_start_lj, cutoff_lj=cutoff_lj)
-    switch_width_lj = cutoff_lj - switch_start_lj
-    distance_vectors = es.distances.DistanceVectors(simu_config)
-    lennardjones = es.potentials.LennardJones(simu_config)
-    potential1 = 0.5 * np.sum(lennardjones.calc_potential(distance_vectors(x, 0)))
+    general_params = (x.shape[1], x.shape[0], False)
+    lj_params = (2.5, 3.5, tuple([1] * x.shape[0]), tuple([1] * x.shape[0]))
+    potential1 = es.potentials.calc_potential(x, general_params, lj_params=lj_params)
+    # legacy potential implementaton, requires sigma, epsilon = 1
+    # and a switch region of 2.5 to 3.5
     potential2 = es.potentials.lj_potential_total(x)
     np.testing.assert_allclose(potential1, potential2)

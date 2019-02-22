@@ -51,7 +51,7 @@ class Coulomb:
                             )
         output *= self.prefactor
         return output
-    
+
     def _check_new_frame(self, current_frame):
         if(self.neighbor_charge_frame_num != current_frame.step):
             self.neighbor_charge_list = _neighbor_charge_list_recalc(self.charge_vector, current_frame.distances,
@@ -132,7 +132,7 @@ def _ewald_pot2(q, distances, distance_vectors, charge_vector, neighbor_charge_l
     # m_modul_sq = np.linalg.norm(m, axis = 1) ** 2
     # coeff_S = np.exp(-(np.pi / alpha) ** 2 * m_modul_sq) / m_modul_sq
     # v_rec = 0.5 / np.pi / (l_box ** 3)
-    # 
+    #
     v_rec = precalc.v_rec_prefactor * np.sum(precalc.coeff_S * S_m_modul_sq)
 
     # self part
