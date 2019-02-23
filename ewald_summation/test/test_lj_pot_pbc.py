@@ -55,9 +55,9 @@ def lj_potential_pairwise(distance):
     ])
 def test_potential(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj, l_box):
     l_box_half = tuple(np.divide(np.array(l_box), 2))
-    general_params = (x.shape[1], x.shape[0], True, l_box, l_box_half)
+    general_params = (x.shape[1], x.shape[0], l_box, l_box_half, True)
     lj_params = (2.5, 3.5, tuple([1] * x.shape[0]), tuple([1] * x.shape[0]))
-    potential1 = es.potentials.calc_potential(x, general_params, lj_params=lj_params)
+    potential1 = es.potentials.calc_potential_pbc(x, general_params, lj_params)
     # legacy potential implementaton, requires sigma, epsilon = 1
     # and a switch region of 2.5 to 3.5
     potential2 = lj_potential_total(distance_vectors_periodic(x, l_box))

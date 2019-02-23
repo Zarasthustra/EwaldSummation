@@ -2,38 +2,50 @@ import numpy as np
 import ewald_summation as es
 import matplotlib.pyplot as plt
 import math
+from numba import njit
 
-### I use this for development, so its always dirty ###
+
+def particle_init_regular_grid_2_kinds_3d(inter_partilce_distance, particles_along_axis):
+    x = np.zeros((particles_along_axis ** n_dim, n_dim))
+    iter = 0
+    for i in range(particles_along_axis):
+        for j in range(particles_along_axis):
+            for k in range(particles_along_axis):
+                x[iter, :] = [i, j, k]
+                iter += 1
+    return x
+
+n_particles_along_axis = 2
+n_particles = n_particles_along_axis**3
+n_dim = 3
+resolution = 6
+l_box = np.array([n_particles_along_axis] * 3)
+# grid=np.array(list(product(range(0,3), repeat=n_dim)))
+# x = 1. * grid
+x = particle_init_regular_grid_2_kinds_3d(1, n_particles_along_axis)
+charge_vector = x.sum(axis=1)%2*2-1
+Madelung = -1.74756459463
+pot_ref = -447.37653622528
+pot_real_ref = -159.04160026039025
+
+simu_config = es.SimuConfig(n_dim=x.shape[1], n_particles=x.shape[0], l_box=l_box, l_cell=l_box[0], neighbour=True)
+simu_config.charges = charge_vector
+distance_vectors = es.distances.DistanceVectors(simu_config)
+coulomb = es.potentials.Coulomb(simu_config)
+pot_calc = coulomb.calc_potential(x, distance_vectors(x, 0))
+
+print(pot_calc)
+
+# print(charge_vector)
+# print(x)
+# x = particle_init_regular_grid_2_kinds_3d(1, 2)
+# charge_vector = x.sum(axis=1)%2*2-1
+# print(charge_vector)
 
 
-# old implementation for lj pot with pbc
-def distance_vectors_periodic(x, l_box):
-    l_box = np.array(l_box)
-    distance_vectors = x[:, None, :] - x[None, :, :]
-    np.mod(distance_vectors, l_box, out=distance_vectors)
-    mask = distance_vectors > np.divide(l_box, 2.)
-    distance_vectors += mask * -l_box
-    return np.linalg.norm(distance_vectors, axis=-1)
+l_box_half = tuple(np.divide(np.array(l_box), 2))
+general_params = (x.shape[1], x.shape[0], tuple(l_box), l_box_half, False, True)
+lj_params = (2.5, 3.5, tuple([1] * x.shape[0]), tuple([1] * x.shape[0]))
+coulomb_params = (charge_vector, 1)
 
-x = np.array([[4.1, 0], [1, 0]])
-n_particles = x.shape[0]
-n_dim = x.shape[1]
-pbc = True
-l_box = (2, 2)
-l_box_half = (1, 1)
-max_length = np.linalg.norm(l_box) / 2
-
-for i in range(n_particles):
-    for j in range(i + 1, n_particles):
-        distance_temp = 0
-        distance_squared = 0
-        if pbc:
-            for k in range(n_dim):
-                distance_temp = (x[i, k] - x[j, k]) % l_box_half[k]
-                if distance_temp < l_box_half[k]:
-                    distance_temp -= l_box[k]
-            distance_squared += distance_temp**2
-        distance = math.sqrt(distance_squared)
-        print(distance)
-
-print(distance_vectors_periodic(x, l_box))
+# print(es.potentials.calc_potential_pbc(x, general_params, lj_params, coulomb_params))
