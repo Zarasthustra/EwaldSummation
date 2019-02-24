@@ -45,7 +45,7 @@ def lj_potential_pairwise(distance):
             switch = t * t * (3. + 2. * t)
             return phi_LJ * switch
 
-@pytest.mark.parametrize('x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj, l_box', [
+@pytest.mark.parametrize('x, epsilon_lj, sigma_lj, switch_start, cutoff, l_box', [
     (np.array([[0, 0], [0, 1.1]]), 1, 1, 2.5, 3.5, (2, 2)),
     (np.array([[0, 0, 0], [0, 0, 1]]), 1, 1, 2.5, 3.5, (5, 5, 5)),
     (np.array([[0, 0, 0], [0, 0, 7]]), 1, 1, 2.5, 3.5, (5, 5, 5)),
@@ -53,11 +53,19 @@ def lj_potential_pairwise(distance):
     (np.random.uniform(-2, 10, (100, 2)), 1, 1, 2.5, 3.5, (5, 5)),
     (np.random.uniform(-2, 10, (100, 3)), 1, 1, 2.5, 3.5, (5, 5, 5)),
     ])
-def test_potential(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj, l_box):
-    l_box_half = tuple(np.divide(np.array(l_box), 2))
-    general_params = (x.shape[1], x.shape[0], l_box, l_box_half, True)
-    lj_params = (2.5, 3.5, tuple([1] * x.shape[0]), tuple([1] * x.shape[0]))
-    potential1 = es.potentials.calc_potential_pbc(x, general_params, lj_params)
+def test_potential(x, epsilon_lj, sigma_lj, switch_start, cutoff, l_box):
+    test_config = es.SimuConfig(n_dim=x.shape[1],
+                                l_box=l_box,
+                                n_particles=x.shape[0],
+                                sigma_lj = [sigma_lj] * x.shape[0],
+                                epsilon_lj = [epsilon_lj] * x.shape[0],
+                                PBC = False,
+                                switch_start = switch_start,
+                                cutoff = cutoff,
+                                parallel_flag = False,
+                                )
+    calc_potential = es.potentials.CalcPotential(test_config)
+    potential1 = calc_potential(x)
     # legacy potential implementaton, requires sigma, epsilon = 1
     # and a switch region of 2.5 to 3.5
     potential2 = lj_potential_total(distance_vectors_periodic(x, l_box))

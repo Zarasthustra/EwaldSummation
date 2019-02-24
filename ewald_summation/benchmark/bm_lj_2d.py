@@ -19,7 +19,13 @@ def StupidInitializer2(box_size, n_particles):
     v_0 = np.array([[0.5, 0.866], [-0.8, 0.6]])
     return masses, charges, q_0, v_0 * masses[:, None]
 
-test_config = es.SimuConfig(n_dim=2, l_box=(2., 2.), n_particles=2, n_steps=10000, timestep=0.001, temp=300)
+test_config = es.SimuConfig(n_dim=2,
+                            l_box=(2., 2.),
+                             n_particles=2,
+                             n_steps=10000,
+                             timestep=0.001,
+                             temp=300)
+
 test_md = es.MD(es.PhysWorld(), test_config, StupidInitializer2, es.step_runners.Langevin(damping=0.))
 test_md.add_global_potential(HarmonicPotential(1.))
 test_md.add_lennard_jones_potential()

@@ -18,7 +18,7 @@ def test_potential(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj):
                                 sigma_lj = [sigma_lj] * x.shape[0],
                                 epsilon_lj = [epsilon_lj] * x.shape[0],
                                 PBC = False,
-                                parallel_flag = False
+                                parallel_flag = True,
                                 )
     calc_potential = es.potentials.CalcPotential(test_config)
     potential1 = calc_potential(x)
