@@ -115,8 +115,8 @@ def lj_potential_numba_neighbour(distances, distances_squared, array_index, sigm
     return output
 
 # calculate force using numba, therefor can not be class method
-@njit(parallel=True)
-def lj_force_pairwise_numba(distance, distance_squared, sigma, epsilon,
+@njit()
+def lj_force_pairwise(distance, distance_squared, sigma, epsilon,
                             switch_width, switch_start, cutoff):
     # calculate potential between 0 and switch region
     if(distance <= switch_start) and (distance > 0):

@@ -64,7 +64,7 @@ def test_potential(x, epsilon_lj, sigma_lj, switch_start, cutoff, l_box):
                                 cutoff = cutoff,
                                 parallel_flag = False,
                                 )
-    calc_potential = es.potentials.CalcPotential(test_config)
+    calc_potential = es.potentials.CalcPotential(test_config, [])
     potential1 = calc_potential(x)
     # legacy potential implementaton, requires sigma, epsilon = 1
     # and a switch region of 2.5 to 3.5

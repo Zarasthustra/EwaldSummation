@@ -20,7 +20,7 @@ def test_potential(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj):
                                 PBC = False,
                                 parallel_flag = True,
                                 )
-    calc_potential = es.potentials.CalcPotential(test_config)
+    calc_potential = es.potentials.CalcPotential(test_config, [])
     potential1 = calc_potential(x)
     # legacy potential implementaton, requires sigma, epsilon = 1
     # and a switch region of 2.5 to 3.5
