@@ -6,7 +6,7 @@ from .coulomb_new import coulomb_potential_pairwise
 
 
 class CalcPotential:
-    def __init__(self, config):
+    def __init__(self, config, global_potentials):
         self.n_dim = config.n_dim
         self.n_particles = config.n_particles
         self.l_box = config.l_box
@@ -20,14 +20,16 @@ class CalcPotential:
         self.switch_start = config.switch_start
         self.switch_width = self.cutoff - self.switch_start
         self.parallel_flag = config.parallel_flag
+        self.global_potentials = global_potentials
 
     def __call__(self, x):
+        potential = np.sum([pot.calc_potential(x) for pot in self.global_potentials])
         if not self.parallel_flag:
-            return _calc_potential(x, self.n_dim, self.n_particles, self.PBC, self.l_box, self.l_box_half, self.lj_flag,
+            return potential + _calc_potential(x, self.n_dim, self.n_particles, self.PBC, self.l_box, self.l_box_half, self.lj_flag,
                                self.switch_start, self.cutoff, self.switch_width,
                                self.sigma_lj, self.epsilon_lj)
         if self.parallel_flag:
-            return _calc_potential_parallel(x, self.n_dim, self.n_particles, self.PBC, self.l_box, self.l_box_half, self.lj_flag,
+            return potential + _calc_potential_parallel(x, self.n_dim, self.n_particles, self.PBC, self.l_box, self.l_box_half, self.lj_flag,
                                self.switch_start, self.cutoff, self.switch_width,
                                self.sigma_lj, self.epsilon_lj)
 
