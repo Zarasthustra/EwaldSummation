@@ -56,7 +56,6 @@ def _calc_force(x, n_dim, n_particles, PBC, l_box, l_box_half, lj_flag, switch_s
                     distance_vector = x[i, :] - x[j, :]
                     distance_squared = np.sum((distance_vector)**2)
                 distance = np.sqrt(distance_squared)
-                print(distance)
                 # calc lj pot
                 if lj_flag:
                     distance_vector *= lj_force_pairwise(distance,
