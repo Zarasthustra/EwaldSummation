@@ -35,7 +35,7 @@ class CalcPotential:
 
 
 
-@njit
+# @njit
 def _calc_potential(x, n_dim, n_particles, PBC, l_box, l_box_half, lj_flag, switch_start, cutoff,
                     switch_width, sigma_lj, epsilon_lj):
         potential = 0

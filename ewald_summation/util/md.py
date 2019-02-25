@@ -54,7 +54,7 @@ class MD:
         return np.sum(forces, axis=0)
 
     def run_step(self, step):
-        next_frame = self.step_runner.run(self.sum_force,
+        next_frame = self.step_runner.run(self.calc_force,
                                           self.calc_potential,
                                           self.traj.get_current_frame(),
                                           self.traj.make_new_frame(),
@@ -65,6 +65,8 @@ class MD:
     def run_all(self):
         # calc_potential initiation
         self.calc_potential = es.potentials.CalcPotential(self.config, self.global_potentials)
+        # calc_force initiation
+        self.calc_force = es.potentials.CalcForce(self.config, self.global_potentials)
         # step runner initiation
         self.step_runner.init(self.phy_world, self.config)
 

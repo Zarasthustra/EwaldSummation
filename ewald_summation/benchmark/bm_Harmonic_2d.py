@@ -1,17 +1,12 @@
 import numpy as np
 import ewald_summation as es
-"""from MD import MD
-from SimuConfig import SimuConfig
-from PhysicalWorld import PhysicalWorld
-from Integrators import Langevin
-"""
 import matplotlib.pyplot as plt
 
 class HarmonicPotential:
     def __init__(self, k):
         self.k = k
 
-    def calc_force(self, q, sys_config):
+    def calc_force(self, q):
         return -2. * self.k * q
     # TODO: calc_potential(q, sys_config)
 

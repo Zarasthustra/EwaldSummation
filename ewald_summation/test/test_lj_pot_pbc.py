@@ -59,7 +59,7 @@ def test_potential(x, epsilon_lj, sigma_lj, switch_start, cutoff, l_box):
                                 n_particles=x.shape[0],
                                 sigma_lj = [sigma_lj] * x.shape[0],
                                 epsilon_lj = [epsilon_lj] * x.shape[0],
-                                PBC = False,
+                                PBC = True,
                                 switch_start = switch_start,
                                 cutoff = cutoff,
                                 parallel_flag = False,

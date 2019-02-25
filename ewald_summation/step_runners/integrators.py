@@ -17,12 +17,12 @@ class Langevin:
 
     def run(self, force_func, potential_func, frame, next_frame, step):
         if self.force is None:
-            self.force = force_func(frame.q, -1)
+            self.force = force_func(frame.q)
         next_frame.p[:, :] = frame.p + self.th * self.force
         next_frame.q[:, :] = frame.q + self.thm * next_frame.p
         next_frame.p[:, :] = self.edt * next_frame.p + self.sqf * np.random.randn(*self.shape)
         next_frame.q[:, :] = next_frame.q + self.thm * next_frame.p
-        self.force[:, :] = force_func(next_frame.q, step)
+        self.force[:, :] = force_func(next_frame.q)
         next_frame.p[:, :] = next_frame.p + self.thm * self.force
         return next_frame
 
