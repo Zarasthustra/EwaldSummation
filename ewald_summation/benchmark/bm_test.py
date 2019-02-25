@@ -15,7 +15,7 @@ def particle_init_regular_grid_2_kinds_3d(inter_partilce_distance, particles_alo
                 iter += 1
     return x
 
-n_particles_along_axis = 2
+n_particles_along_axis = 8
 n_particles = n_particles_along_axis**3
 n_dim = 3
 resolution = 6
@@ -36,6 +36,17 @@ pot_calc = coulomb.calc_potential(x, distance_vectors(x, 0))
 
 print(pot_calc)
 
+simu_config1 = es.SimuConfig(n_dim=x.shape[1], n_particles=x.shape[0], l_box=l_box, l_cell=l_box[0], neighbour=False,
+                            lj_flag=False, coulomb_flag=True, cutoff=8)
+simu_config1.charges = charge_vector
+calc_pot = es.potentials.CalcPotential(simu_config1, [])
+pot_calc_2 = calc_pot(x)
+print(pot_calc_2)
+
+
+
+
+
 # print(charge_vector)
 # print(x)
 # x = particle_init_regular_grid_2_kinds_3d(1, 2)
@@ -43,9 +54,9 @@ print(pot_calc)
 # print(charge_vector)
 
 
-l_box_half = tuple(np.divide(np.array(l_box), 2))
-general_params = (x.shape[1], x.shape[0], tuple(l_box), l_box_half, False, True)
-lj_params = (2.5, 3.5, tuple([1] * x.shape[0]), tuple([1] * x.shape[0]))
-coulomb_params = (charge_vector, 1)
+# l_box_half = tuple(np.divide(np.array(l_box), 2))
+# general_params = (x.shape[1], x.shape[0], tuple(l_box), l_box_half, False, True)
+# lj_params = (2.5, 3.5, tuple([1] * x.shape[0]), tuple([1] * x.shape[0]))
+# coulomb_params = (charge_vector, 1)
 
 # print(es.potentials.calc_potential_pbc(x, general_params, lj_params, coulomb_params))

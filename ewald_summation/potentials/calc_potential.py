@@ -1,7 +1,8 @@
 import numpy as np
 from numba import jit, njit, cuda, prange
 import math
-from .lennard_jones import lj_potential_pairwise
+from .lj_potential import calc_potential_lj, calc_potential_lj_parallel
+from .coulomb_potential import calc_potential_coulomb_real, calc_potential_coulomb_rec
 from .coulomb_new import coulomb_potential_pairwise
 
 
@@ -13,6 +14,7 @@ class CalcPotential:
         self.l_box_half = np.array(self.l_box) / 2
         self.PBC = config.PBC
         self.lj_flag = config.lj_flag
+        self.coulomb_flag = config.coulomb_flag
         self.sigma_lj = config.sigma_lj
         self.epsilon_lj = config.epsilon_lj
         self.neighbour = config.neighbour
@@ -21,135 +23,43 @@ class CalcPotential:
         self.switch_width = self.cutoff - self.switch_start
         self.parallel_flag = config.parallel_flag
         self.global_potentials = global_potentials
+        if self.coulomb_flag:
+            self.charges = np.array(config.charges)
+            self.alpha = config.alpha
+            self.rec_reso = config.rec_reso
+            self.epsilon = 1. / (4. * np.pi)
+            self.prefactor_coulomb = 1. / (4. * np.pi * self.epsilon)
+            self.precalc = self.Coulomb_PreCalc(self.l_box, self.charges, self.rec_reso, self.alpha)
+
+    class Coulomb_PreCalc:
+        def __init__(self, l_box, charges, rec_resolution, alpha):
+            self.m = (1/l_box) * _grid_points_without_center(rec_resolution, rec_resolution, rec_resolution)
+            m_modul_sq = np.linalg.norm(self.m, axis = 1) ** 2
+            self.coeff_S = np.exp(-(np.pi / alpha) ** 2 * m_modul_sq) / m_modul_sq
+            self.v_rec_prefactor = 0.5 / np.pi / (l_box[0] * l_box[1] * l_box[2])
+            self.f_rec_prefactor = -charges / (l_box[0] * l_box[1] * l_box[2]) # j and 2pi parts come here
+            self.v_self = -alpha / np.sqrt(np.pi) * np.sum(charges**2)
 
     def __call__(self, x):
         potential = np.sum([pot.calc_potential(x) for pot in self.global_potentials])
-        if not self.parallel_flag:
-            return potential + _calc_potential(x, self.n_dim, self.n_particles, self.PBC, self.l_box, self.l_box_half, self.lj_flag,
-                               self.switch_start, self.cutoff, self.switch_width,
-                               self.sigma_lj, self.epsilon_lj)
-        if self.parallel_flag:
-            return potential + _calc_potential_parallel(x, self.n_dim, self.n_particles, self.PBC, self.l_box, self.l_box_half, self.lj_flag,
-                               self.switch_start, self.cutoff, self.switch_width,
-                               self.sigma_lj, self.epsilon_lj)
+        if self.lj_flag and not self.coulomb_flag:
+            if not self.parallel_flag:
+                return potential + calc_potential_lj(x, self.n_dim, self.n_particles, self.PBC, self.l_box, self.l_box_half,
+                                   self.switch_start, self.cutoff, self.switch_width,
+                                   self.sigma_lj, self.epsilon_lj)
+            else:
+                return potential + calc_potential_lj_parallel(x, self.n_dim, self.n_particles, self.PBC, self.l_box, self.l_box_half,
+                                   self.switch_start, self.cutoff, self.switch_width,
+                                   self.sigma_lj, self.epsilon_lj)
+        if self.coulomb_flag and not self.lj_flag:
+            return potential + (calc_potential_coulomb_real(x, self.n_dim, self.n_particles, self.charges, self.alpha,
+                                                       self.l_box, self.l_box_half, self.cutoff)
+                                + calc_potential_coulomb_rec(x, self.precalc.m, self.charges, self.precalc.v_rec_prefactor, self.precalc.coeff_S)
+                                + self.precalc.v_self) * self.prefactor_coulomb
 
 
-
-# @njit
-def _calc_potential(x, n_dim, n_particles, PBC, l_box, l_box_half, lj_flag, switch_start, cutoff,
-                    switch_width, sigma_lj, epsilon_lj):
-        potential = 0
-        for i in range(n_particles):
-            for j in range(i + 1, n_particles):
-                # calc dist_square, dist
-                distance_squared = 0
-                # minimum image convention for pbc
-                if PBC:
-                    for k in range(n_dim):
-                        distance_temp = (x[i, k] - x[j, k]) % l_box[k]
-                        if distance_temp > l_box_half[k]:
-                            distance_temp -= l_box[k]
-                        distance_squared += distance_temp**2
-                else:
-                    distance_squared += np.sum((x[i, :] - x[j, :])**2)
-                distance = np.sqrt(distance_squared)
-                # calc lj pot
-                if lj_flag:
-                    potential += lj_potential_pairwise(distance,
-                                                       distance_squared,
-                                                       0.5 * (sigma_lj[i] + sigma_lj[j]),
-                                                       math.sqrt(epsilon_lj[i] * epsilon_lj[j]),
-                                                       switch_width,
-                                                       switch_start,
-                                                       cutoff,
-                                                       )
-        return potential
-
-
-@njit(parallel=True)
-def _calc_potential_parallel(x, n_dim, n_particles, PBC, l_box, l_box_half, lj_flag, switch_start, cutoff,
-                    switch_width, sigma_lj, epsilon_lj):
-        # arrays for every parallel loop to temporarily store data
-        # needs more testing
-        potential = np.zeros(n_particles)
-        distance_squared = np.zeros(n_particles)
-        distance = np.zeros(n_particles)
-        # distance_temp = np.zeros((n_particles, n_dim))
-        # prange explicitely tells numba to parallelize that loop
-        for i in prange(n_particles):
-            for j in range(n_particles):
-                # calc dist_square, dist
-                distance_squared[i] = 0
-                # minimum image convention for pbc
-                # if PBC:
-                #     for k in range(n_dim):
-                #         distance_temp = (x[i, k] - x[j, k]) % l_box[k]
-                #         if distance_temp > l_box_half[k]:
-                #             distance_temp -= l_box[k]
-                #         distance_squared[i] += distance_temp**2
-                # else:
-                distance_squared[i] += np.sum((x[i, :] - x[j, :])**2)
-                distance[i] = np.sqrt(distance_squared[i])
-                # calc lj pot
-                if lj_flag and distance[i] > 0:
-                    potential[i] += lj_potential_pairwise(distance[i],
-                                                       distance_squared[i],
-                                                       0.5 * (sigma_lj[i] + sigma_lj[j]),
-                                                       math.sqrt(epsilon_lj[i] * epsilon_lj[j]),
-                                                       switch_width,
-                                                       switch_start,
-                                                       cutoff,
-                                                       )
-        # print()
-        return 0.5 * potential.sum()
-
-#
-#
-# def calc_potential_pbc(x, general_params, lj_params, coulomb_params):
-#     n_dim = general_params[0]
-#     n_particles = general_params[1]
-#     l_box = general_params[2]
-#     l_box_half = general_params[3]
-#     lj_flag = general_params[4]
-#     coulomb_flag = general_params[5]
-#     switch_start = lj_params[0]
-#     cutoff = lj_params[1]
-#     switch_width = cutoff - switch_start
-#     sigma = lj_params[2]
-#     epsilon = lj_params[3]
-#     charges = coulomb_params[0]
-#     alpha = coulomb_params[1]
-#     v_rec_prefactor = 1 / math.pi / (l_box[0] * l_box[1] * l_box[2])
-#
-#     potential = 0
-#     for i in range(n_particles):
-#         for j in range(i + 1, n_particles):
-#             # calc dist_square, dist
-#             distance_squared = 0
-#             for k in range(n_dim):
-#                 distance_temp = (x[i, k] - x[j, k]) % l_box[k]
-#                 if distance_temp > l_box_half[k]:
-#                     distance_temp -= l_box[k]
-#                 distance_squared += distance_temp**2
-#             distance = math.sqrt(distance_squared)
-#             # calc lj pot
-#             if lj_flag:
-#                 sigma_mixed = 0.5 * (sigma[i] + sigma[j])
-#                 epsilon_mixed = math.sqrt(epsilon[i] * epsilon[j])
-#                 potential += lj_potential_pairwise(distance,
-#                                                    distance_squared,
-#                                                    sigma_mixed,
-#                                                    epsilon_mixed,
-#                                                    switch_width,
-#                                                    switch_start,
-#                                                    cutoff,
-#                                                    )
-#             if coulomb_flag:
-#                 charge_i = charges[i]
-#                 charge_j = charges[j]
-#                 potential += coulomb_potential_pairwise(distance,
-#                                                         charge_i,
-#                                                         charge_j,
-#                                                         alpha,
-#                                                         )
-#     return potential
+def _grid_points_without_center(nx, ny, nz):
+    a, b, c = np.arange(-nx, nx+1), np.arange(-ny, ny+1), np.arange(-nz, nz+1)
+    xx, yy, zz = np.meshgrid(a, b, c)
+    X = np.vstack([xx.reshape(-1), yy.reshape(-1), zz.reshape(-1)]).T
+    return np.delete(X, X.shape[0] // 2, axis=0)

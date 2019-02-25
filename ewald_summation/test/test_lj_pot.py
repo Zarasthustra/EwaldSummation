@@ -3,7 +3,7 @@ import pytest
 import ewald_summation as es
 
 
-@pytest.mark.parametrize('x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj', [
+@pytest.mark.parametrize('x, epsilon_lj, sigma_lj, switch_start, cutoff', [
     (np.array([[0,0,0],[1,1,1]]), 1, 1, 2.5, 3.5),
     (np.array([[0,0,0],[1,1,1],[0,1,0]]), 1, 1, 2.5, 3.5),
     (np.array([[0,0,0],[0,1,200]]), 1, 1, 2.5, 3.5),
@@ -11,14 +11,16 @@ import ewald_summation as es
     (np.random.uniform(-20, 20, (100, 2)), 1, 1, 2.5, 3.5),
     (np.random.uniform(-20, 20, (100, 3)), 1, 1, 2.5, 3.5),
     ])
-def test_potential(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj):
+def test_potential(x, epsilon_lj, sigma_lj, switch_start, cutoff):
     test_config = es.SimuConfig(n_dim = x.shape[1],
                                 l_box = [0],
                                 n_particles = x.shape[0],
                                 sigma_lj = [sigma_lj] * x.shape[0],
                                 epsilon_lj = [epsilon_lj] * x.shape[0],
                                 PBC = False,
-                                parallel_flag = False
+                                parallel_flag = False,
+                                cutoff = cutoff,
+                                switch_start = switch_start,
                                 )
     calc_potential = es.potentials.CalcPotential(test_config, [])
     potential1 = calc_potential(x)

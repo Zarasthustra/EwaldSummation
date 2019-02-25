@@ -80,7 +80,7 @@ def _grid_points_without_center(nx, ny, nz):
     X = np.vstack([xx.reshape(-1), yy.reshape(-1), zz.reshape(-1)]).T
     return np.delete(X, X.shape[0] // 2, axis=0)
 
-@jit
+# @jit
 def _ewald_pot2(q, distances, distance_vectors, charge_vector, neighbor_charge_list,
                 precalc, alpha):
 
@@ -113,11 +113,30 @@ def _ewald_pot2(q, distances, distance_vectors, charge_vector, neighbor_charge_l
         #        v_real += 0.5 * charge_vector[i] * charge_vector[j] * erfc(alpha * distance) / distance
     # ---
 
+    def calc_pot_coulomb_reciprocal(x, k, prefactor):
+        pot_rec = 0
+        for i in range(x.shape[0]):
+            for j in range(k.shape[0]):
+                r_dot_k_2pi = 2 * np.pi * (x[i, 0] * k[j, 0] + x[i, 1] * k[j, 1] + x[i, 2] * k[j, 2])
+                pot_rec += np.sin(r_dot_k_2pi)**2 + np.cos(r_dot_k_2pi)**2
+        return pot_rec * precalc.v_rec_prefactor
+
+    # v_rec_1 = calc_pot_coulomb_reciprocal(q, precalc.m, precalc.v_rec_prefactor)
+    # def calc_pot_coulomb_reciprocal(x, k, prefactor):
+    # m_dot_q = np.matmul(q, np.transpose(precalc.m))
+    # middle0 = np.pi * 2. * m_dot_q
+    # S_m_cos_sum = charge_vector.dot(np.cos(middle0))
+    # S_m_sin_sum = charge_vector.dot(np.sin(middle0))
+    # S_m_modul_sq = np.square(S_m_cos_sum) + np.square(S_m_sin_sum)
+    # v_rec = precalc.v_rec_prefactor * np.sum(precalc.coeff_S * S_m_modul_sq)
+    # return v_rec
+
     # reciprocal part
     # m = np.array(list(product(range(-M, M+1), repeat=3)))
     # m = (1/l_box) * np.delete(m, m.shape[0] // 2, 0)
     # m = (1/l_box) * _grid_points_without_center(M)
     m_dot_q = np.matmul(q, np.transpose(precalc.m))
+    # print('old', m_dot_q.sum())
     ## structure factor
     middle0 = np.pi * 2. * m_dot_q
     #middle1 = np.pi * 2.j * m_dot_q
@@ -127,7 +146,9 @@ def _ewald_pot2(q, distances, distance_vectors, charge_vector, neighbor_charge_l
     #S_sin_part = np.sin(middle0)
     S_m_cos_sum = charge_vector.dot(np.cos(middle0))
     S_m_sin_sum = charge_vector.dot(np.sin(middle0))
+    # print('old_sin', S_m_cos_sum.sum())
     S_m_modul_sq = np.square(S_m_cos_sum) + np.square(S_m_sin_sum)
+    # print('old_mod', S_m_modul_sq.sum())
     #S_m_modul_sq = np.real(np.conjugate(S_m) * S_m)
     # m_modul_sq = np.linalg.norm(m, axis = 1) ** 2
     # coeff_S = np.exp(-(np.pi / alpha) ** 2 * m_modul_sq) / m_modul_sq
@@ -141,7 +162,8 @@ def _ewald_pot2(q, distances, distance_vectors, charge_vector, neighbor_charge_l
     # print('v_rec', v_rec)
     # print('v_self', v_self)
     # return v_real + v_rec + v_self
-    return v_real + v_rec + precalc.v_self
+    # print('old', v_rec)
+    return  v_rec + v_real + precalc.v_self
 
 @jit
 def _ewald_force(q, distances, dist_sq, distance_vectors, charge_vector, neighbor_charge_list,

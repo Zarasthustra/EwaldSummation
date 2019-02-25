@@ -13,7 +13,6 @@ class Coulomb:
         # self.epsilon = config.epsilon_coulomb
         self.epsilon = 1. / (4. * np.pi)
         self.prefactor = 1. / (4. * np.pi * self.epsilon)
-        print(self.prefactor)
         self.charge_vector = config.charges
         self.alpha = 1.
         # self.REAL_CUTOFF = config.cutoff_coulomb_real_sum
@@ -120,8 +119,6 @@ def _ewald_pot2(q, distances, distance_vectors, charge_vector, neighbor_charge_l
     # m = (1/l_box) * np.delete(m, m.shape[0] // 2, 0)
     # m = (1/l_box) * _grid_points_without_center(M)
     m_dot_q = np.matmul(q, np.transpose(precalc.m))
-    print(precalc.m.shape)
-    print(m_dot_q.shape)
     ## structure factor
     middle0 = np.pi * 2. * m_dot_q
     #middle1 = np.pi * 2.j * m_dot_q
@@ -205,6 +202,6 @@ def _ewald_force(q, distances, dist_sq, distance_vectors, charge_vector, neighbo
     # print('f_rec', f_rec)
     return f_real - f_rec
 
-def coulomb_potential_pairwise(distance, charge_i, charge_j, alpha, k_vectors, prefactor):
+def coulomb_potential_pairwise(distance, charge_i, charge_j, alpha):
     v_real = charge_i * charge_j * math.erfc(alpha * distance) / distance
     return v_real
