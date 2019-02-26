@@ -1,5 +1,3 @@
-import numpy as np
-
 class GradientDecent:
     def init(self, phy_world, config):
         self.timestep = config.timestep

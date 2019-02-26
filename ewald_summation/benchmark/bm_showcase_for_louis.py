@@ -20,7 +20,7 @@ def StupidInitializer2(box_size, n_particles):
 test_config = es.SimuConfig(n_dim=n_dim, l_box=l_box, n_particles=n_particles,
                             n_steps= 100, p_kinds= [200,0,0], timestep=10e-3, temp=0.8, start_sampling=1, sampling_rate=40, PBC=True, neighbour = False, l_cell = 2.5)
 test_md = es.MD(es.PhysWorld(), test_config, StupidInitializer2,
-                es.step_runners.MMC())
+                es.step_runners.GradientDecent())
 
 test_md.add_lennard_jones_potential()
 test_md.run_all()
