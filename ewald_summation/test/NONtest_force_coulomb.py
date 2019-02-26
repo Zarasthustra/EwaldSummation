@@ -30,9 +30,21 @@ def test_force_coulomb():
     charge_vector = np.array([-1., 1.])
     # simu_config = es.SimuConfig(n_dim=q.shape[1], n_particles=q.shape[0], l_box=l_box, l_cell=l_box[0], neighbour=True)
     simu_config = es.SimuConfig(n_dim=q.shape[1], n_particles=q.shape[0], l_box=l_box, l_cell=l_box[0], PBC=True, neighbour=False)
+'''
+    simu_config = es.SimuConfig(n_dim = q.shape[1],
+                                n_particles = q.shape[0],
+                                l_box = l_box,
+                                l_cell = l_box[0],
+                                neighbour = True,
+                                lj_flag = False,
+                                coulomb_flag = True,
+                                )
+'''
     simu_config.charges = charge_vector
     distance_vectors = es.distances.DistanceVectors(simu_config)
     coulomb = es.potentials.Coulomb(simu_config)
+    calc_pot = es.potentials.CalcPotential(simu_config, [])
+    calc_force = es.potentials.CalcForce(simu_config, [])
 
     xs = np.arange(1., 2., 0.01)
     pots = np.zeros(100)
@@ -48,4 +60,3 @@ def test_force_coulomb():
     for i in range(1, 100):
         force_inte[i] = force_inte[i - 1] + 0.01 * -forces[i - 1]
     np.testing.assert_allclose(pots, force_inte, rtol=1e-02)
-

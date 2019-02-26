@@ -41,19 +41,9 @@ class MD:
         self.pairwise_potentials = []
         self.coulumb_potentials = []
         self.lennard_jones_potentials = []
-           
+
     def add_global_potential(self, new_global_potential):
         self.global_potentials.append(new_global_potential)
-     
-    def add_pairwise_potential(self, new_pairwise_potential):
-        self.pairwise_potentials.append(new_pairwise_potential)
-
-    def add_lennard_jones_potential(self):
-        self.lennard_jones = es.potentials.LennardJones(self.config)
-        self.lennard_jones_potentials.append(self.lennard_jones)
-
-    def add_coulumb_potential(self, new_coulumb_potential):
-        self.coulumb_potentials.append(new_coulumb_potential)
 
     def sum_force(self, q, step):
         forces = [pot.calc_force(q, self.config) for pot in self.global_potentials]
@@ -63,17 +53,9 @@ class MD:
                                       for pot in self.coulumb_potentials])
         return np.sum(forces, axis=0)
 
-    def sum_potential(self, q, step):
-        potentials = [pot.calc_potential(q, self.config) for pot in self.global_potentials]
-        potentials.extend([pot.calc_potential(self.distance_vectors(q, step))
-                                              for pot in self.lennard_jones_potentials])
-        potentials.extend([pot.calc_potential(self.distance_vectors(q, step))
-                                              for pot in self.coulumb_potentials])
-        return np.sum(potentials, axis=0)
-
     def run_step(self, step):
-        next_frame = self.step_runner.run(self.sum_force,
-                                          self.sum_potential,
+        next_frame = self.step_runner.run(self.calc_force,
+                                          self.calc_potential,
                                           self.traj.get_current_frame(),
                                           self.traj.make_new_frame(),
                                           step,
@@ -81,6 +63,10 @@ class MD:
         self.traj.set_new_frame(next_frame)
 
     def run_all(self):
+        # calc_potential initiation
+        self.calc_potential = es.potentials.CalcPotential(self.config, self.global_potentials)
+        # calc_force initiation
+        self.calc_force = es.potentials.CalcForce(self.config, self.global_potentials)
         # step runner initiation
         self.step_runner.init(self.phy_world, self.config)
 

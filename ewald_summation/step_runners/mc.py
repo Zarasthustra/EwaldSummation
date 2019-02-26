@@ -12,11 +12,11 @@ class MMC:
 
     def run(self, force_func, potential_func, frame, next_frame, step):
         if self.potential is None:
-            self.potential = potential_func(frame.q, -1)
+            self.potential = potential_func(frame.q)
         pointToMove = np.random.randint(self.n_particles)
         proposed = frame.q.copy()
         proposed[pointToMove] += uniform(-self.step, self.step, self.n_dim)
-        propose_potential = potential_func(proposed, step)
+        propose_potential = potential_func(proposed)
         if uniform() < np.exp(self.beta * (self.potential - propose_potential)):
             next_frame.q[:, :] = proposed
             self.potential = propose_potential

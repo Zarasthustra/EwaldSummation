@@ -18,8 +18,8 @@ def distances(q):
     mask = distance_vectors > np.divide(l_box, 2.)
     distance_vectors += mask * - l_box[0]
     return distance_vectors
-    
-    
+
+
 
 N_particles = 30
 density = 0.2
@@ -30,7 +30,6 @@ l_box = (N_particles/density) ** (1/n_dim) * np.ones(n_dim)
 test_config = es.SimuConfig(n_dim=n_dim, l_box=l_box, n_particles=N_particles, n_steps=N_steps, timestep=0.000001, temp=0.1, PBC=True, neighbour=False)
 test_md = es.MD(es.PhysWorld(), test_config, initializer_3d, es.step_runners.Langevin(damping=0.2))
 #test_md.add_global_potential(HarmonicPotential(1.))
-test_md.add_lennard_jones_potential()
 
 test_md.run_all()
 #print(test_md.traj.get_qs())
@@ -47,7 +46,7 @@ hist=np.zeros(bin_res-1)
 
 #ideal_gas_qs=l_box[0] * np.random.rand(N_steps,N_particles,3)
 
- 
+
 
 
 clas=es.observables.WriteXyz(test_config,qs, "Na", "Cl")
@@ -62,9 +61,3 @@ plt.plot(bins,g_r)
 #plt.plot(bins_id,g_r_id)
 
 plt.show()
-
-
-
-
-
-
