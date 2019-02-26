@@ -22,7 +22,7 @@ def test_potential_coulomb(n_particles_along_axis):
     resolution = 6
     l_box = np.array([n_particles_along_axis] * 3)
     x = particle_init_regular_grid_2_kinds_3d(1, n_particles_along_axis)
-    charge_vector = x.sum(axis=1) % 2 * 2 - 1
+    charges = x.sum(axis=1) % 2 * 2 - 1
     Madelung = -1.74756459463
     simu_config = es.SimuConfig(n_dim = x.shape[1],
                                 n_particles = x.shape[0],
@@ -33,7 +33,7 @@ def test_potential_coulomb(n_particles_along_axis):
                                 coulomb_flag = True,
                                 cutoff = 8,
                                 )
-    simu_config.charges = charge_vector
+    simu_config.charges = charges
     calc_pot = es.potentials.CalcPotential(simu_config, [])
     pot_calc = calc_pot(x)
     np.testing.assert_allclose(pot_calc, Madelung * n_particles / 2)

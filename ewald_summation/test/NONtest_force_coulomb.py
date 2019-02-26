@@ -34,10 +34,19 @@ if __name__ == "__main__":
     q = np.array([[0., 0., 0.], [1., 0., 0.]])
     charge_vector = np.array([-1., 1.])
 
-    simu_config = es.SimuConfig(n_dim=q.shape[1], n_particles=q.shape[0], l_box=l_box, l_cell=l_box[0], neighbour=True)
+    simu_config = es.SimuConfig(n_dim = q.shape[1],
+                                n_particles = q.shape[0],
+                                l_box = l_box,
+                                l_cell = l_box[0],
+                                neighbour = True,
+                                lj_flag = False,
+                                coulomb_flag = True,
+                                )
     simu_config.charges = charge_vector
     distance_vectors = es.distances.DistanceVectors(simu_config)
     coulomb = es.potentials.Coulomb(simu_config)
+    calc_pot = es.potentials.CalcPotential(simu_config, [])
+    calc_force = es.potentials.CalcForce(simu_config, [])
 
     xs = np.arange(1., 2., 0.01)
     pots = np.zeros(100)
@@ -47,14 +56,14 @@ if __name__ == "__main__":
     for i in range(100):
         q[1, 0] = xs[i]
         step += 1
-        pots[i] = coulomb.calc_potential(q, distance_vectors(q, step))
-        forces[i] = coulomb.calc_force(q, distance_vectors(q, step))[1, 0]
+        pots[i] = calc_pot(q)
+        forces[i] = calc_force(q)[1, 0]
     xs_prime = np.arange(1.005, 2.005, 0.01)
     force_inte[0] = pots[0] - 0.005 * forces[0]
     for i in range(1, 100):
         force_inte[i] = force_inte[i - 1] - forces[i] * 0.01
     plt.figure(dpi=150)
-    plt.plot(xs, pots, label='ewald_pot')
+    plt.plot(xs, pots, marker='*', label='ewald_pot')
     plt.plot(xs, forces, label='ewald_force')
     plt.plot(xs_prime, force_inte, label='integrated_pot')
     plt.ylabel('Potential/Force')
