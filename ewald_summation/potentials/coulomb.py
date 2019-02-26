@@ -11,8 +11,9 @@ class Coulomb:
         self.l_box = config.l_box
         self.neighbour = config.neighbour
         # self.epsilon = config.epsilon_coulomb
-        self.epsilon = 1. / (4. * np.pi)
-        self.prefactor = 1. / (4. * np.pi * self.epsilon)
+        #self.epsilon = 1. / (4. * np.pi)
+        #self.prefactor = 1. / (4. * np.pi * self.epsilon)
+        self.prefactor = config.phys_world.k_C
         self.charge_vector = config.charges
         # optimal alpha and cutoff selections
         # ref: http://protomol.sourceforge.net/ewald.pdf
