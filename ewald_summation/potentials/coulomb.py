@@ -17,7 +17,7 @@ class Coulomb:
         # optimal alpha and cutoff selections
         # ref: http://protomol.sourceforge.net/ewald.pdf
         accuracy = 1e-5
-        ratio_real_rec = 1.
+        ratio_real_rec = .8
         V = self.l_box[0] * self.l_box[1] * self.l_box[2]
         self.alpha = ratio_real_rec * np.sqrt(np.pi) * (config.n_particles / V / V) ** (1/6)
         # self.REAL_CUTOFF = config.cutoff_coulomb_real_sum
@@ -72,7 +72,7 @@ class Coulomb:
                                                                      current_frame.array_index)
             self.neighbor_charge_frame_num = current_frame.step
 
-@jit
+# @jit
 def _neighbor_charge_list_recalc(charge_vector, distances, array_index):
     neighbor_charge_list = np.zeros_like(array_index, dtype=float)
     for i in range(array_index.shape[0]):
@@ -94,7 +94,7 @@ def _grid_points_without_center(nx, ny, nz):
     X = np.vstack([xx.reshape(-1), yy.reshape(-1), zz.reshape(-1)]).T
     return np.delete(X, X.shape[0] // 2, axis=0)
 
-@jit
+# @jit
 def _ewald_pot2(q, distances, distance_vectors, charge_vector, neighbor_charge_list,
                 precalc, alpha):
 
