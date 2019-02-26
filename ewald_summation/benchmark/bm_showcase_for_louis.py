@@ -24,6 +24,8 @@ test_md = es.MD(es.PhysWorld(), test_config, StupidInitializer2,
 
 test_md.add_lennard_jones_potential()
 test_md.run_all()
+qs = test_md.traj.get_qs()
 
 
-
+MakeXYZ = es.observables.WriteXyz(test_config, qs, "Ar", "Ar")
+MakeXYZ.write_xyz()
