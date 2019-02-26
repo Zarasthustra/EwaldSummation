@@ -5,6 +5,9 @@ import math
 from numba import njit
 
 
+# run Python3 -m cProfile -0 namefile.prof speed_100_NaCl.property
+# then skakeviz namefile.prof
+
 class SodiumChlorideInit:
     def __init__(self, inter_partilce_distance, n_particles_along_axis):
         self.n_particles = n_particles_along_axis**3
