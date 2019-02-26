@@ -10,7 +10,7 @@ class CalcPotential:
     def __init__(self, config, global_potentials):
         self.n_dim = config.n_dim
         self.n_particles = config.n_particles
-        self.l_box = config.l_box
+        self.l_box = np.array(config.l_box)
         self.l_box_half = np.array(self.l_box) / 2
         self.PBC = config.PBC
         self.lj_flag = config.lj_flag

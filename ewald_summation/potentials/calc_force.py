@@ -9,7 +9,7 @@ class CalcForce:
     def __init__(self, config, global_potentials):
         self.n_dim = config.n_dim
         self.n_particles = config.n_particles
-        self.l_box = config.l_box
+        self.l_box = np.array(config.l_box)
         self.l_box_half = np.array(self.l_box) / 2
         self.PBC = config.PBC
         self.lj_flag = config.lj_flag
@@ -71,6 +71,25 @@ class CalcForce:
                                                         self.l_box_half,
                                                         self.cutoff,
                                                         )
+                             # * self.charges[..., None]
+                             - calc_force_coulomb_rec(x,
+                                                      self.precalc.m,
+                                                      self.charges,
+                                                      self.precalc.f_rec_prefactor,
+                                                      self.precalc.coeff_S,
+                                                      )
+                             )
+        if self.coulomb_flag and self.lj_flag:
+            if not self.parallel_flag:
+                return force + (calc_force_coulomb_real(x,
+                                                        self.n_dim,
+                                                        self.n_particles,
+                                                        self.charges,
+                                                        self.alpha,
+                                                        self.l_box,
+                                                        self.l_box_half,
+                                                        self.cutoff,
+                                                        )
                              * self.charges[..., None]
                              - calc_force_coulomb_rec(x,
                                                       self.precalc.m,
@@ -78,6 +97,19 @@ class CalcForce:
                                                       self.precalc.f_rec_prefactor,
                                                       self.precalc.coeff_S,
                                                       )
+                             + calc_force_lj(x,
+                                              self.n_dim,
+                                              self.n_particles,
+                                              self.PBC,
+                                              self.l_box,
+                                              self.l_box_half,
+                                              self.lj_flag,
+                                              self.switch_start,
+                                              self.cutoff,
+                                              self.switch_width,
+                                              self.sigma_lj,
+                                              self.epsilon_lj,
+                                              )
                              )
 
 
