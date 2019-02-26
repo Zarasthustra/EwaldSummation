@@ -2,12 +2,9 @@ import numpy as np
 from numba import njit
 from itertools import combinations_with_replacement   
 class RadialDistributionFunction:
-    
-    store_hist = np.zeros([6,20])
-    
-    #store data during simulation
-    
-    def __init__(self, config):
+   
+    def init(self, config):
+        print("init")
         self.neighbour = config.neighbour
         self.n_steps = config.n_steps
         self.l_box = np.array(config.l_box)
@@ -16,17 +13,18 @@ class RadialDistributionFunction:
         self.density = self.n_particles / np.prod(self.l_box)
         self.start_sampling = config.start_sampling
         self.sampling_rate= config.sampling_rate
-        self.norm_factor = divmod(self.n_steps - self.start_sampling, self.sampling_rate)[0]
+        self.norm_factor = self.norm_factor = divmod(self.n_steps, self.sampling_rate)[0]-divmod(self.start_sampling,self.sampling_rate)[0]
         # times rad_func get called
         self.last_call = self.n_steps - (self.n_steps - 1) % self.sampling_rate - 1
         self.n_dim = config.n_dim
         self.r_max = np.min(self.l_box) / 2
         if self.r_max >= 7:
            self.r_max = 7
-        self.bin_res = 21
+        self.bin_res = 71
         self.bin_width = self.r_max / self.bin_res
         self.bins = self.bin_width  * np.arange(self.bin_res)    
         self.p_index = []
+        self.store_hist = np.zeros([6,self.bin_res-1])
         for _ in range(len(self.p_kinds)):
             self.p_index = np.append(self.p_index, [_] * self.p_kinds[_]).astype(int)
         
@@ -35,14 +33,16 @@ class RadialDistributionFunction:
        calls rad_dist_func depending on, neighbour == True
        or not, also checks when to start averaging
        """
-       print(step)
-       if step == self.last_call:
-           self.averaging()
+       print(step/self.n_steps*100, "%")
+       #print(self.store_hist)
        if self.neighbour:
            dist = rad_dist_func_neighbour(current_frame.distances, self.r_max, self.p_index, current_frame.array_index)
        else:
            dist = rad_dist_func_not_neighbour(current_frame.distances, self.r_max, self.p_index)
        self.store_hist += self.hist_func(dist)
+       if step == self.last_call:
+           self.averaging()
+           print("averaging")
             
     def averaging(self):
         """ 
@@ -60,13 +60,14 @@ class RadialDistributionFunction:
         name_list = ["g_r_0_0.dat", "g_r_1_1.dat", "g_r_2_2.dat", "g_r_0_1.dat", "g_r_0_2.dat", "g_r_1_2.dat"]
         norm_list = [self.p_kinds[0]*self.p_kinds[0],self.p_kinds[1]*self.p_kinds[1],self.p_kinds[2]*self.p_kinds[2],
                      2*self.p_kinds[0]*self.p_kinds[1],2*self.p_kinds[0]*self.p_kinds[2],2*self.p_kinds[1]*self.p_kinds[2]]
+                     
         for _ in range(6):
             if np.sum(self.store_hist[_]) == 0:
-                g_r = np.zeros(69)
+                g_r = np.zeros(self.bin_res-1)
             else:
                 g_r = self.store_hist[_] / self.density * self.n_particles / norm_list[_] / delta_V / self.norm_factor
-                data = np.concatenate([[g_r],[real_bins]])
-                np.savetxt(name_list[_], np.transpose(data), delimiter=" ")
+            data = np.concatenate([[g_r],[real_bins]])
+            np.savetxt(name_list[_], np.transpose(data), delimiter=" ")
 
     def hist_func(self, dist):
         hist = np.zeros([6,self.bin_res-1])

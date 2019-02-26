@@ -8,6 +8,7 @@ class MD:
         self.config = simu_config
         # step runner, e.g. Langevin integrator or MCMC
         self.step_runner = step_runner
+        self.sample_g_r = es.observables.RadialDistributionFunction()
 
         # for easy fetching
         self.l_box = simu_config.l_box
@@ -34,7 +35,7 @@ class MD:
         self.step_runner.init(self.phy_world, self.config)
 
         # observables now as an empty dict
-        self.observables = {}
+        self.observables = {}                      
 
         # for managing all existing potentials in the system
         # Potential objects should offer method that calc potentials and forces
@@ -85,13 +86,13 @@ class MD:
         self.traj.set_new_frame(next_frame)
 
     def sample_rad_dist_func(self, step):
-        call_sample_func = es.observables.RadialDistributionFunction(self.config)
-        call_sample_func.calc_radial_dist(self.distance_vectors(self.traj.get_current_frame().q, step),step)
+        self.sample_g_r.calc_radial_dist(self.distance_vectors(self.traj.get_current_frame().q, step),step)
         
     def run_all(self):
         # step runner initiation
         self.step_runner.init(self.phy_world, self.config)
-
+        self.sample_g_r.init(self.config)
+        
         # run sim for n_steps
         for step in range(self.traj.current_frame_num, self.n_steps):
             self.run_step(step)

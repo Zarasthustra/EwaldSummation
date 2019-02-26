@@ -13,7 +13,7 @@ class HarmonicPotential:
 
     def calc_force(self, q, sys_config):
         return -2. * self.k * q
-    # TODO: calc_potential(q, sys_config)
+    # TODO: calc_potential(q, sys_config) 
 
 def StupidInitializer2(l_box, n_particles):
     # need to return a tuple of four vectors

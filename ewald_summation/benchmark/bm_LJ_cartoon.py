@@ -32,8 +32,8 @@ def grid_initializer_2d(l_box, n_particles):
 
 N_particles = 9
 l_box = (8., 8.)
-test_config = es.SimuConfig(n_dim=2, l_box=l_box, n_particles=N_particles, n_steps=3000, timestep=0.001, temp=100, PBC=True, neighbour=True)
-test_md = es.MD(es.PhysWorld(), test_config, grid_initializer_2d, es.step_runners.Langevin(damping=0.1))
+test_config = es.SimuConfig(n_dim=2, l_box=l_box, n_particles=N_particles, n_steps=3000, timestep=1, temp=100, PBC=True, neighbour=True)
+test_md = es.MD(es.PhysWorld(), test_config, grid_initializer_2d, es.step_runners.GradientDecent())
 #test_md.add_global_potential(HarmonicPotential(1.))
 test_md.add_lennard_jones_potential()
 test_md.run_all()
