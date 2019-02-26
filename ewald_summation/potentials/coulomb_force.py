@@ -3,11 +3,10 @@ from numba import njit
 import math
 
 
-# @njit
+@njit
 def calc_force_coulomb_real(x, n_dim, n_particles, charges, alpha, l_box, l_box_half, cutoff):
         force = np.zeros((n_particles, n_dim))
         for i in range(n_particles):
-            temp = 0
             for j in range(n_particles):
                 if i != j:
                     # calc dist_square, dist
@@ -20,13 +19,13 @@ def calc_force_coulomb_real(x, n_dim, n_particles, charges, alpha, l_box, l_box_
                     distance_squared = np.sum(distance_vector**2)
                     distance = math.sqrt(distance_squared)
                     # calc coulomb force
-                    if distance < cutoff and distance > 0:
-                        temp += coulomb_force_pairwise(distance_vector,
+                    if distance < cutoff:
+                        temp = charges[i] * coulomb_force_pairwise(distance_vector,
                                                               distance,
                                                               distance_squared,
                                                               charges[j],
                                                               alpha)
-            force[i, :] += temp * charges[i]
+                        force[i, :] += temp
         return force
 
 
