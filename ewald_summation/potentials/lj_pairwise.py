@@ -26,7 +26,7 @@ def LJ(config, switch_start=2.5, cutoff=3.5):
     def pot_func(pair, dv):
         i, j = pair[0], pair[1]
         epsilon, sigma = epsilon_matrix[i, j], sigma_matrix[i, j]
-        if(epsilon_matrix[i, j] != 0.):
+        if(epsilon != 0.):
             distance = dv[1]
             distance_squared = distance ** 2
             if(distance <= switch_start):
@@ -46,7 +46,7 @@ def LJ(config, switch_start=2.5, cutoff=3.5):
         # Def: dv_ij = q_i - q_j
         i, j = pair[0], pair[1]
         epsilon, sigma = epsilon_matrix[i, j], sigma_matrix[i, j]
-        if(epsilon_matrix[i, j] != 0.):
+        if(epsilon != 0.):
             distance_vector = dv[0]
             distance = dv[1]
             distance_squared = distance ** 2
