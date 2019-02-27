@@ -1,9 +1,9 @@
 import numpy as np
 import math
 from numba import njit
-from pw_numba import deco
+from pairwise_template import pairwise
 
-@deco
+@pairwise
 def CoulombReal(config, alpha, cutoff):
     # precalc
     n_dim = config.n_dim

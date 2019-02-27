@@ -59,8 +59,8 @@ print("MULTI:", a.MULTI)
 #for pair in a.pairs:
 #    print(pair)
 # to show the results and finish the jit compiling
-#print(a.pot)
-#print(len(a.forces))
+print(a.pot)
+print(len(a.forces))
 print()
 # benchmark
 pasofdp = None

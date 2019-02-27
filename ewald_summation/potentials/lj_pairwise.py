@@ -1,9 +1,9 @@
 import numpy as np
 import math
 from numba import njit
-from pw_numba import deco
+from pairwise_template import pairwise
 
-@deco
+@pairwise
 def LJ(config, switch_start=2.5, cutoff=3.5):
     # precalc
     switch_width = cutoff - switch_start
