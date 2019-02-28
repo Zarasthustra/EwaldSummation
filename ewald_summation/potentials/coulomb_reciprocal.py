@@ -8,7 +8,7 @@ def CoulombReciprocal(config, alpha, rec_reso):
     n_dim = config.n_dim
     assert n_dim == 3, "For other dimensions not implemented."
     assert config.PBC, "Ewald sum only meaningful for periodic systems."
-    prefactor = config.phys_world.k_C / 2.
+    prefactor = config.phys_world.k_C
     
     l_box = np.array(config.l_box)
     charges = np.empty(config.n_particles)
@@ -30,7 +30,6 @@ def CoulombReciprocal(config, alpha, rec_reso):
         S_m_sin_sum = charges.dot(np.sin(middle0))
         S_m_modul_sq = np.square(S_m_cos_sum) + np.square(S_m_sin_sum)
         v_rec = v_rec_prefactor * np.sum(coeff_S * S_m_modul_sq)
-        # print('new', v_rec)
         return v_rec + v_self
 
     def force_func(q):
