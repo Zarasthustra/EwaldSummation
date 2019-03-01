@@ -183,7 +183,8 @@ def _update_neighbor_list(new_raw_index, convert, neighbor_list, neighbor_list_h
             neighbor_list[next_particle, 0] = neighbor_list[i, 0]
             # insert particle i to new list
             neighbor_list[i, 0] = _HEAD
-            neighbor_list[neighbor_list_head[new_index], 0] = i
+            if(neighbor_list_head[new_index] != _None):
+                neighbor_list[neighbor_list_head[new_index], 0] = i
             neighbor_list[i, 1] = neighbor_list_head[new_index]
             neighbor_list_head[new_index] = i
 
@@ -204,7 +205,7 @@ def _get_particles_in_neighboring_cells(temp, neighbor_list,
 @njit
 def _pots_neighbor(n_cells, n_particles, neighbor_list_head, neighboring_cells, neighbor_list,
                     positions, l_box, pot_func, particle_info):
-    neighboring_particles = np.empty(n_particles, np.int32)
+    neighboring_particles = np.empty(4 * n_particles, np.int32)
     pots_sum = np.zeros(n_particles)
     half_l_box = np.divide(l_box, 2.)
     for current_cell in range(n_cells):
@@ -226,7 +227,7 @@ def _pots_neighbor(n_cells, n_particles, neighbor_list_head, neighboring_cells, 
 @njit
 def _forces_neighbor(n_cells, n_particles, neighbor_list_head, neighboring_cells, neighbor_list,
                     positions, l_box, force_func, particle_info):
-    neighboring_particles = np.empty(n_particles, np.int32)
+    neighboring_particles = np.empty(4 * n_particles, np.int32)
     n_dim = len(l_box)
     forces_sum = np.zeros((n_particles, n_dim))
     half_l_box = np.divide(l_box, 2.)
