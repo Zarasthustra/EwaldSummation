@@ -18,7 +18,7 @@ def initializer(arg1, arg2):
 
 masses, charges, q_0, p_0 = initializer(1, 1)
 phy_world = es.PhysWorld()
-config = es.SimuConfig(n_dim=2, l_box=(2., 2.), n_particles=2, n_steps=10000, timestep=0.01, temp=300)
+config = es.SimuConfig(n_dim=2, l_box=(2., 2.), n_particles=2, n_steps=1000, timestep=0.01, temp=300)
 config.dtype = 'float32'
 config.masses = masses
 config.charge = charges
@@ -91,12 +91,13 @@ def lagevin_cuda(q_0, p_0, phy_world, config, damping):
     @cuda.jit
     def kernel_calc_force(q, out, particle_types, lj_mixing_conditions):
         i = cuda.grid(1)
+        dv = cuda.local.array(n_dim, dtype=dtype)
+        # force = cuda.local.array(n_dim, dtype=dtype)
         if i < n_particles:
             pos_i = q[i, :]
-            dv = cuda.local.array(n_dim, dtype=dtype)
-            force = cuda.local.array(n_dim, dtype=dtype)
+            # force = cuda.local.array(n_dim, dtype=dtype)
             for k in range(n_dim):
-                out[i, k] = global_force(q[i, k])
+                out[i, k] = global_force(pos_i[k])
             for j in range(n_particles):
                 if i != j:
                     distance_squared = 0
