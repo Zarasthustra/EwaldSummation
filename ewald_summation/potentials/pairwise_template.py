@@ -79,7 +79,7 @@ class PWNumba:
             self.neighbor_list = -np.ones((self.n_particles, 2), np.int32)
             self.neighbor_list_head = -np.ones(self.n_cells, np.int32)
             # neighboring_cells, every line (neighboring cells)
-            self.neighboring_cells = np.empty((self.n_cells, 3 ** self.n_dim), np.int32)
+            self.neighboring_cells = -np.ones((self.n_cells, 3 ** self.n_dim), np.int32)
             _make_neighboring_cells(self.neighboring_cells, self.n_cell, self.convert)
         else:
             # multiple images within cutoff
@@ -163,9 +163,12 @@ def _make_neighboring_cells(neighboring_cells, n_cell, convert):
     for cell in cells:
         index = int((cell * convert).sum())
         i = 0
+        possible_neighbors = []
         for grid in grids:
-            neighboring_cells[index, i] = int(((cell + grid) % n_cell * convert).sum())
-            i += 1    
+            possible_neighbors.append(int(((cell + grid) % n_cell * convert).sum()))
+            i += 1
+        neighbors = np.unique(possible_neighbors)
+        neighboring_cells[index, :len(neighbors)] = neighbors
 
 @njit
 def _update_neighbor_list(new_raw_index, convert, neighbor_list, neighbor_list_head, in_which_cell):
@@ -180,7 +183,8 @@ def _update_neighbor_list(new_raw_index, convert, neighbor_list, neighbor_list_h
                 neighbor_list_head[old_index] = next_particle
             else:
                 neighbor_list[neighbor_list[i, 0], 1] = next_particle
-            neighbor_list[next_particle, 0] = neighbor_list[i, 0]
+            if(next_particle != _None):
+                neighbor_list[next_particle, 0] = neighbor_list[i, 0]
             # insert particle i to new list
             neighbor_list[i, 0] = _HEAD
             if(neighbor_list_head[new_index] != _None):
@@ -193,11 +197,12 @@ def _get_particles_in_neighboring_cells(temp, neighbor_list,
                      neighbor_list_head, neighboring_cells):
     i = 0
     for cell in neighboring_cells:
-        curr_particle = neighbor_list_head[cell]
-        while(curr_particle != _None):
-            temp[i] = curr_particle
-            i += 1
-            curr_particle = neighbor_list[curr_particle, 1]
+        if(cell != _None):
+            curr_particle = neighbor_list_head[cell]
+            while(curr_particle != _None):
+                temp[i] = curr_particle
+                i += 1
+                curr_particle = neighbor_list[curr_particle, 1]
     return i
 
 # pots and forces need to be defined separatedly, otherwise not supported by
@@ -205,7 +210,7 @@ def _get_particles_in_neighboring_cells(temp, neighbor_list,
 @njit
 def _pots_neighbor(n_cells, n_particles, neighbor_list_head, neighboring_cells, neighbor_list,
                     positions, l_box, pot_func, particle_info):
-    neighboring_particles = np.empty(4 * n_particles, np.int32)
+    neighboring_particles = np.empty(n_particles, np.int32)
     pots_sum = np.zeros(n_particles)
     half_l_box = np.divide(l_box, 2.)
     for current_cell in range(n_cells):
@@ -227,7 +232,7 @@ def _pots_neighbor(n_cells, n_particles, neighbor_list_head, neighboring_cells, 
 @njit
 def _forces_neighbor(n_cells, n_particles, neighbor_list_head, neighboring_cells, neighbor_list,
                     positions, l_box, force_func, particle_info):
-    neighboring_particles = np.empty(4 * n_particles, np.int32)
+    neighboring_particles = np.empty(n_particles, np.int32)
     n_dim = len(l_box)
     forces_sum = np.zeros((n_particles, n_dim))
     half_l_box = np.divide(l_box, 2.)
