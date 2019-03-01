@@ -1,6 +1,7 @@
 import numpy as np
-from coulomb_real import CoulombReal
-from coulomb_reciprocal import CoulombReciprocal
+#from .coulomb_real import CoulombReal
+#from .coulomb_reciprocal import CoulombReciprocal
+from .coulomb_combined import Coulomb
 from timeit import default_timer as timer
 
 class FakeWorld:
@@ -54,24 +55,25 @@ def _intializer_NaCl(n):
 q, particle_info, l_box = _intializer_NaCl(16) # 12*12*12 = 1728 particles
 config = FakeConfig(q.shape[1], l_box, q.shape[0], particle_info)
 
-accuracy = 1e-8
-# ratio_real_rec = 5.3 #for 1e-6 accuracy
-ratio_real_rec = 5.5 # for 1e-8 accuracy
-V = config.l_box[0] * config.l_box[1] * config.l_box[2]
-alpha = ratio_real_rec * np.sqrt(np.pi) * (config.n_particles / V / V) ** (1/6)
-REAL_CUTOFF = np.sqrt(-np.log(accuracy)) / alpha
-REC_RESO = int(np.ceil(np.sqrt(-np.log(accuracy)) * 2 * alpha))
+#accuracy = 1e-8
+## ratio_real_rec = 5.3 #for 1e-6 accuracy
+#ratio_real_rec = 5.5 # for 1e-8 accuracy
+#V = config.l_box[0] * config.l_box[1] * config.l_box[2]
+#alpha = ratio_real_rec * np.sqrt(np.pi) * (config.n_particles / V / V) ** (1/6)
+#REAL_CUTOFF = np.sqrt(-np.log(accuracy)) / alpha
+#REC_RESO = int(np.ceil(np.sqrt(-np.log(accuracy)) * 2 * alpha))
 
-a = CoulombReal(config, alpha, REAL_CUTOFF)
-b = CoulombReciprocal(config, alpha, REC_RESO)
+#a = CoulombReal(config, alpha, REAL_CUTOFF)
+#b = CoulombReciprocal(config, alpha, REC_RESO)
+a, b = Coulomb(config, accuracy=1e-8)
 a.set_positions(q)
 b.set_positions(q)
 #for pair in a.pairs:
 #    print(pair)
 # to show the results and finish the jit compiling
 print('MULTI:', a.MULTI)
-print('real cutoff:', REAL_CUTOFF)
-print('reciprocal reso:', REC_RESO)
+#print('real cutoff:', REAL_CUTOFF)
+#print('reciprocal reso:', REC_RESO)
 print(a.pot + b.pot)
 print(len(a.forces))
 print()

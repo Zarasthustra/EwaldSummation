@@ -1,7 +1,7 @@
 import numpy as np
 import math
 from numba import njit
-from pairwise_template import pairwise
+from .pairwise_template import pairwise
 
 @pairwise
 def CoulombReal(config, alpha, cutoff):

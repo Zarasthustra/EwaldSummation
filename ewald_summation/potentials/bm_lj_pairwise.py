@@ -1,5 +1,5 @@
 import numpy as np
-from lj_pairwise import LJ
+from .lj_pairwise import LJ
 from timeit import default_timer as timer
 
 class FakeConfig:

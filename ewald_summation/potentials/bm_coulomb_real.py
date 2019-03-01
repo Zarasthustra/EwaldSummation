@@ -1,6 +1,6 @@
 import numpy as np
 #from coulomb_real import CoulombFake as CoulombReal
-from coulomb_real import CoulombReal
+from .coulomb_real import CoulombReal
 from timeit import default_timer as timer
 
 class FakeWorld:

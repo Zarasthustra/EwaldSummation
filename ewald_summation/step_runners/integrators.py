@@ -4,10 +4,10 @@ class Langevin:
     def __init__(self, damping=0.1):
         self.damping = damping
 
-    def init(self, phy_world, config):
+    def init(self, config):
         time_step = config.timestep
         mass = config.masses
-        beta = 1. / (phy_world.k_B * config.temp)
+        beta = 1. / (config.phys_world.k_B * config.temp)
         self.shape = list((config.n_particles, config.n_dim))
         self.th = 0.5 * time_step
         self.thm = 0.5 * time_step / mass[:, None]
@@ -15,14 +15,14 @@ class Langevin:
         self.sqf = np.sqrt((1.0 - self.edt ** 2) / beta)
         self.force = None # Storage for last frame force
 
-    def run(self, force_func, potential_func, frame, next_frame, step):
+    def run(self, sum_force, sum_potential, frame, next_frame, step):
         if self.force is None:
-            self.force = force_func(frame.q)
+            self.force = sum_force(frame.q, step)
         next_frame.p[:, :] = frame.p + self.th * self.force
         next_frame.q[:, :] = frame.q + self.thm * next_frame.p
         next_frame.p[:, :] = self.edt * next_frame.p + self.sqf * np.random.randn(*self.shape)
         next_frame.q[:, :] = next_frame.q + self.thm * next_frame.p
-        self.force[:, :] = force_func(next_frame.q)
+        self.force[:, :] = sum_force(next_frame.q, step + 1)
         next_frame.p[:, :] = next_frame.p + self.thm * self.force
         return next_frame
 

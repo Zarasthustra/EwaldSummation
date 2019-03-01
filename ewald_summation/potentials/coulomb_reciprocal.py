@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from global_template import globalx
+from .global_template import globalx
 
 @globalx
 def CoulombReciprocal(config, alpha, rec_reso):

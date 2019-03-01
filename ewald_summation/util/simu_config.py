@@ -1,39 +1,12 @@
 import numpy as np
 
 class SimuConfig:
-    def __init__(self, n_dim=3, l_box=[1.,1.,1.], PBC=False, n_particles=1, n_steps=1000,
-     timestep=1e-10, neighbour=False, l_cell=1, temp=1, alpha=1, rec_reso=6,
-     switch_start=2.5, cutoff=3.5, sigma_lj=1, epsilon_lj=1, lj_flag=True, coulomb_flag=False,
-     parallel_flag=False, phys_world=None):
+    def __init__(self, l_box=[1.,1.,1.], PBC=True, phys_world=None, particle_info=[0],
+                 n_steps=1000, timestep=1e-10, temp=300.):
         # TODO: sanity checks
-        self.l_box = l_box
+        self.l_box = np.asarray(l_box)
+        self.n_dim = self.l_box.shape[0]
         self.PBC = PBC
-        self.n_steps = n_steps
-        self.n_particles = n_particles
-        self.n_dim = n_dim
-        self.lj_flag = lj_flag
-        self.coulomb_flag = coulomb_flag
-        # move these initializations to initializer
-        self.masses = None
-        self.charges = None
-        self.alpha = alpha
-        self.rec_reso = rec_reso
-        self.temp = temp
-        self.timestep = timestep
-        self.neighbour = neighbour
-        self.l_cell = l_cell
-        # Temp
-        self.switch_start = switch_start
-        self.cutoff = cutoff
-        if isinstance(sigma_lj, (int, float)):
-            self.sigma_lj = [sigma_lj] * self.n_particles
-        else:
-            self.sigma_lj = sigma_lj
-        if isinstance(epsilon_lj, (int, float)):
-            self.epsilon_lj = [epsilon_lj] * self.n_particles
-        else:
-             self.epsilon_lj = epsilon_lj
-        self.parallel_flag = parallel_flag
         # physical world
         if phys_world is None:
             self.phys_world = PhysWorld()
@@ -41,6 +14,15 @@ class SimuConfig:
             self.phys_world = phys_world
         self.particle_types = self.phys_world.particle_types
         self.molecule_types = self.phys_world.molecule_types
+        # particles
+        self.particle_info = np.asarray(particle_info, dtype=np.uint8)
+        self.n_particles = self.particle_info.shape[0]
+        self.masses = np.empty(self.n_particles)
+        for i in range(self.n_particles):
+            self.masses[i] = self.particle_types[self.particle_info[i]][1]
+        self.n_steps = n_steps
+        self.timestep = timestep
+        self.temp = temp        
 
 class PhysWorld:
     def __init__(self):

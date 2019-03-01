@@ -26,7 +26,7 @@ def globalx(global_pot):
 
 class GlobalTemplate:
     def __init__(self, config, func):
-        assert config.PBC, 'Only implemented for periodic case.'
+        self.PBC = config.PBC
         self.l_box = config.l_box
         self.n_particles = config.n_particles
         self.n_dim = config.n_dim
@@ -37,7 +37,10 @@ class GlobalTemplate:
         self._forces = None
         
     def set_positions(self, new_positions):
-        self.positions[:, :] = new_positions % self.l_box
+        if(self.PBC):
+            self.positions[:, :] = new_positions % self.l_box
+        else:
+            self.positions[:, :] = new_positions
         self._pot_recalc = True
         self._force_recalc = True
 
