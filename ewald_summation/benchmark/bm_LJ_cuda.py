@@ -54,13 +54,28 @@ def lagevin_cuda(q_0, p_0, phy_world, config, damping):
     blockspergrid = (blockspergrid_x)
     rng_states = create_xoroshiro128p_states(threadsperblock * blockspergrid_x * n_dim, seed=1)
 
-    # CUDA kernel for forces
+    # CUDA kernel
     @cuda.jit
-    def kernel_calc_force(q_device, force_device):
+    def kernel_force_pairwise(x, pot, l_box, cutoff, sigma_lj, epsilon_lj):
+        switch_width = cutoff - switch_start
         i = cuda.grid(1)
-        if i < q_device.shape[0]:
-            for k in range(n_dim):
-                force_device[i, k] = global_force(q_device[i, k])
+        if i < x.shape[0]:
+            for j in range(x.shape[0]):
+                if i != j:
+                    distance_squared = 0.
+                    dv_x = 0
+                    dv_y = 0
+                    dv_z = 0
+                    for k in range(n_dim):
+                        distance_temp = (x[i, k] - x[j, k]) % l_box[k]
+                        if distance_temp > l_box[k] / 2:
+                            distance_temp -= l_box[k]
+                        distance_squared += distance_temp**2
+                        distance = math.sqrt(distance_squared)
+                    if distance < cutoff and distance > 0:
+                        sigma_mixed = 0.5 * (sigma_lj[i] + sigma_lj[j])
+                        epsilon_mixed = math.sqrt(epsilon_lj[i] * epsilon_lj[j])
+                        pot[i, j] += force_pairwise(distance, distance_squared, i, j)
 
     # split lagevin exectuion in two kernels
     @cuda.jit

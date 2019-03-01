@@ -18,11 +18,11 @@ def initializer(arg1, arg2):
 
 masses, charges, q_0, p_0 = initializer(1, 1)
 phy_world = es.PhysWorld()
-config = es.SimuConfig(n_dim=2, l_box=(2., 2.), n_particles=2, n_steps=5000, timestep=0.01, temp=300)
+config = es.SimuConfig(n_dim=2, l_box=(2., 2.), n_particles=2, n_steps=1000, timestep=0.01, temp=300)
 config.dtype = 'float32'
 config.masses = masses
 config.charge = charges
-damping = 0.05
+damping = 0
 
 
 def lagevin_cuda(q_0, p_0, phy_world, config, damping):
@@ -54,14 +54,6 @@ def lagevin_cuda(q_0, p_0, phy_world, config, damping):
     blockspergrid = (blockspergrid_x)
     rng_states = create_xoroshiro128p_states(threadsperblock * blockspergrid_x * n_dim, seed=1)
 
-    # CUDA kernel for forces
-    @cuda.jit
-    def kernel_calc_force(q_device, force_device):
-        i = cuda.grid(1)
-        if i < q_device.shape[0]:
-            for k in range(n_dim):
-                force_device[i, k] = global_force(q_device[i, k])
-
     # split lagevin exectuion in two kernels
     @cuda.jit
     def kernel_lagevin_1(q_device, p_device, force_device, thm_device, rng_states):
@@ -84,6 +76,15 @@ def lagevin_cuda(q_0, p_0, phy_world, config, damping):
             for k in range(n_dim):
                 p_device[i, k] = p_device[i, k] + thm_device[i] * force_device[i, k]
 
+    # CUDA kernel for forces
+    @cuda.jit
+    def kernel_calc_force(q_device, force_device):
+        i = cuda.grid(1)
+        if i < q_device.shape[0]:
+            for k in range(n_dim):
+                force_device[i, k] = global_force(q_device[i, k])
+
+    # device function for global forces
     @cuda.jit(device=True)
     def global_force(q):
         return -2. * k * q
