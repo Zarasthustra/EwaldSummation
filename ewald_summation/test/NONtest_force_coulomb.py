@@ -19,25 +19,32 @@ def test_potential_neighbour(x, epsilon_lj, sigma_lj, switch_start_lj, cutoff_lj
     np.testing.assert_allclose(potential1, potential2)
 '''
 
-def test_potential_coulomb(x, charge_vector, l_box, pot_ref):
-    simu_config = es.SimuConfig(n_dim=x.shape[1], n_particles=x.shape[0], l_box=l_box, l_cell=l_box[0], neighbour=True)
-    simu_config.charges = charge_vector
-    distance_vectors = es.distances.DistanceVectors(simu_config)
-    coulomb = es.potentials.Coulomb(simu_config)
-    pot_calc = coulomb.calc_potential(x, distance_vectors(x, 0))
-    np.testing.assert_allclose(pot_calc, pot_ref)
-
-if __name__ == "__main__":
+def test_force_coulomb():
+    '''Ensure the correctness of Coulomb force calculation by the testing if the potentials from direct calculation and
+    from numerical integration of force are the same.
+    '''
     n_dim = 3
     l_box = np.array([3., 3., 3.])
     n_particles = 2
     q = np.array([[0., 0., 0.], [1., 0., 0.]])
     charge_vector = np.array([-1., 1.])
-
-    simu_config = es.SimuConfig(n_dim=q.shape[1], n_particles=q.shape[0], l_box=l_box, l_cell=l_box[0], neighbour=True)
+    # simu_config = es.SimuConfig(n_dim=q.shape[1], n_particles=q.shape[0], l_box=l_box, l_cell=l_box[0], neighbour=True)
+    simu_config = es.SimuConfig(n_dim=q.shape[1], n_particles=q.shape[0], l_box=l_box, l_cell=l_box[0], PBC=True, neighbour=False)
+'''
+    simu_config = es.SimuConfig(n_dim = q.shape[1],
+                                n_particles = q.shape[0],
+                                l_box = l_box,
+                                l_cell = l_box[0],
+                                neighbour = True,
+                                lj_flag = False,
+                                coulomb_flag = True,
+                                )
+'''
     simu_config.charges = charge_vector
     distance_vectors = es.distances.DistanceVectors(simu_config)
     coulomb = es.potentials.Coulomb(simu_config)
+    calc_pot = es.potentials.CalcPotential(simu_config, [])
+    calc_force = es.potentials.CalcForce(simu_config, [])
 
     xs = np.arange(1., 2., 0.01)
     pots = np.zeros(100)
@@ -49,16 +56,7 @@ if __name__ == "__main__":
         step += 1
         pots[i] = coulomb.calc_potential(q, distance_vectors(q, step))
         forces[i] = coulomb.calc_force(q, distance_vectors(q, step))[1, 0]
-    xs_prime = np.arange(1.005, 2.005, 0.01)
-    force_inte[0] = pots[0] - 0.005 * forces[0]
+    force_inte[0] = pots[0]
     for i in range(1, 100):
-        force_inte[i] = force_inte[i - 1] - forces[i] * 0.01
-    plt.figure(dpi=150)
-    plt.plot(xs, pots, label='ewald_pot')
-    plt.plot(xs, forces, label='ewald_force')
-    plt.plot(xs_prime, force_inte, label='integrated_pot')
-    plt.ylabel('Potential/Force')
-    plt.xlabel('x coordinate of particle 1')
-    plt.legend()
-    plt.grid()
-    plt.show()
+        force_inte[i] = force_inte[i - 1] + 0.01 * -forces[i - 1]
+    np.testing.assert_allclose(pots, force_inte, rtol=1e-02)

@@ -32,10 +32,18 @@ def grid_initializer_2d(l_box, n_particles):
 
 N_particles = 9
 l_box = (8., 8.)
-test_config = es.SimuConfig(n_dim=2, l_box=l_box, n_particles=N_particles, n_steps=3000, timestep=0.001, temp=100, PBC=True, neighbour=True)
+test_config = es.SimuConfig(n_dim = 2,
+                            l_box = l_box,
+                            n_particles = N_particles,
+                            n_steps = 3000,
+                            timestep = 0.001,
+                            temp = 100,
+                            PBC = True,
+                            neighbour = False,
+                            lj_flag = True,
+                            )
 test_md = es.MD(es.PhysWorld(), test_config, grid_initializer_2d, es.step_runners.Langevin(damping=0.1))
 #test_md.add_global_potential(HarmonicPotential(1.))
-test_md.add_lennard_jones_potential()
 test_md.run_all()
 #print(test_md.traj.get_qs())
 qs = test_md.traj.get_qs()
@@ -53,7 +61,7 @@ writer = FFMpegWriter(fps=20, metadata=metadata)
 fig = plt.figure()
 l, = plt.plot([], [], 'ro')
 plt.setp(l, markersize=int(256/l_box[0]))
-plt.setp(l, markerfacecolor='C0') 
+plt.setp(l, markerfacecolor='C0')
 
 
 plt.xlim(0., l_box[0])

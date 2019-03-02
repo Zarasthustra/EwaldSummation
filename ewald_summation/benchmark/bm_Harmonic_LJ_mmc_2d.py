@@ -20,13 +20,14 @@ def StupidInitializer3(box_size, n_particles):
     v_0 = np.array([[0., 0.], [0., 0.]])
     return q_0, v_0
 
-test_config = es.SimuConfig(l_box=(8., 8.), PBC=True, particle_info=[0, 0], n_steps=10000, timestep=0.001, temp=30, phys_world=dummy_world)
-test_md = es.MD(test_config, StupidInitializer3, es.step_runners.Langevin(damping=0.01))
-test_md.add_potential(HarmonicTrap(test_config, 100., [4., 4.]))
-#test_md.add_potential(es.potentials.LJ(test_config, switch_start=2.5, cutoff=3.5))
+test_config = es.SimuConfig(l_box=(8., 8.), PBC=True, particle_info=[0, 0], n_steps=10000, timestep=0.001, temp=100, phys_world=dummy_world
+                            )
+
+test_md = es.MD(test_config, StupidInitializer3, es.step_runners.MMC(step=0.05))
+test_md.add_potential(HarmonicTrap(test_config, 1000., [4., 4.]))
+test_md.add_potential(es.potentials.LJ(test_config, switch_start=2.5, cutoff=3.5))
 test_md.run_all()
-#print(test_md.traj.get_qs())
-qs = test_md.traj.get_qs() % 8.
+qs = test_md.traj.get_qs()
 plt.plot(qs[:, 0, 0], qs[:, 0, 1])
 plt.plot(qs[:, 1, 0], qs[:, 1, 1])
 plt.show()
