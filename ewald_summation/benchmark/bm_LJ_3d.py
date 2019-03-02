@@ -1,39 +1,22 @@
 import numpy as np
 import ewald_summation as es
 import matplotlib.pyplot as plt
+from .dummies import dummy_world
 
-class HarmonicPotential:
-    def __init__(self, k):
-        self.k = k
+def random_initiliazer(box_size, n_particles):
+    n_dim = len(box_size)
+    q_0 = np.random.uniform(0.1, 7, (n_particles, n_dim))
+    v_0 = np.zeros((n_particles, n_dim))
+    return q_0, v_0
 
-    def calc_force(self, q):
-        return -2. * self.k * q
-    # TODO: calc_potential(q, sys_config)
 
-def StupidInitializer2(box_size, n_particles):
-    # need to return a tuple of four vectors
-    # masses, charges, q_0 and p_0
-    masses = np.array([1., 1.])
-    charges = np.array([0., 0.])
-    q_0 = np.array([[0., 0., 0.], [0., 1., 0.]])
-    v_0 = np.array([[0.5, 0.866, 0], [-0.8, 0.6, 0]])
-    return masses, charges, q_0, v_0 * masses[:, None]
-
-test_config = es.SimuConfig(n_dim = 3,
-                            l_box = (2., 2., 2.),
-                             n_particles = 2,
-                             n_steps = 10000,
-                             timestep = 0.001,
-                             temp = 300,
-                             lj_flag = True,
-                             PBC = False,
-                             )
-
-test_md = es.MD(es.PhysWorld(), test_config, StupidInitializer2, es.step_runners.Langevin(damping=0.1))
-test_md.add_global_potential(HarmonicPotential(1.))
+test_config = es.SimuConfig(l_box=(8., 8., 8.), PBC=True, particle_info=[0] * 40, n_steps=2000, timestep=0.001, temp=30, phys_world=dummy_world)
+test_md = es.MD(test_config, random_initiliazer, es.step_runners.Langevin(damping=0.01))
+test_md.add_potential(es.potentials.LJ(test_config, switch_start=2.5, cutoff=3.5))
 test_md.run_all()
-#print(test_md.traj.get_qs())
-qs = test_md.traj.get_qs()
+
+
+qs = test_md.traj.get_qs() % 8.
 plt.plot(qs[:, 0, 0], qs[:, 0, 1])
 plt.plot(qs[:, 1, 0], qs[:, 1, 1])
 plt.show()
