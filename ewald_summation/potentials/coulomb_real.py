@@ -35,6 +35,6 @@ def CoulombReal(config, alpha, cutoff):
         distance_squared = distance * distance
         real_part = math.erfc(alpha * distance) / distance + \
                         alpha_coeff * math.exp(n_alpha_sq * distance_squared)
-        return charge_product[i, j] * (real_part / distance_squared) * distance_vector
+        return prefactor * charge_product[i, j] * (real_part / distance_squared) * distance_vector
     
     return pot_func, force_func, cutoff
