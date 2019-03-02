@@ -220,12 +220,14 @@ def _pots_neighbor(n_cells, n_particles, neighbor_list_head, neighboring_cells, 
                                                         neighbor_list_head, neighboring_cells[current_cell])
         while(particle_i != _None):
             for particle_j in neighboring_particles[:count]:
-                if(particle_j != particle_i):
+                #if(particle_j != particle_i):
                     #yield(((particle_i, particle_j), _calc_dist_neighbor(positions,
                     #                     particle_i, particle_j, l_box, half_l_box)))
                     type_i, type_j = particle_info[particle_i], particle_info[particle_j]
-                    pots_sum[particle_i] += pot_func((type_i, type_j), _calc_dist_neighbor(positions,
-                                         particle_i, particle_j, l_box, half_l_box))
+                    dv, dist = _calc_dist_neighbor(positions,
+                                         particle_i, particle_j, l_box, half_l_box)
+                    if(dist != 0.):
+                        pots_sum[particle_i] += pot_func((type_i, type_j), (dv, dist))
             particle_i = neighbor_list[particle_i, 1]
     return pots_sum
 
@@ -243,12 +245,14 @@ def _forces_neighbor(n_cells, n_particles, neighbor_list_head, neighboring_cells
                                                         neighbor_list_head, neighboring_cells[current_cell])
         while(particle_i != _None):
             for particle_j in neighboring_particles[:count]:
-                if(particle_j != particle_i):
+                #if(particle_j != particle_i):
                     #yield(((particle_i, particle_j), _calc_dist_neighbor(positions,
                     #                     particle_i, particle_j, l_box, half_l_box)))
                     type_i, type_j = particle_info[particle_i], particle_info[particle_j]
-                    forces_sum[particle_i] += force_func((type_i, type_j), _calc_dist_neighbor(positions,
-                                         particle_i, particle_j, l_box, half_l_box))
+                    dv, dist = _calc_dist_neighbor(positions,
+                                         particle_i, particle_j, l_box, half_l_box)
+                    if(dist != 0.):
+                        forces_sum[particle_i] += force_func((type_i, type_j), (dv, dist))
             particle_i = neighbor_list[particle_i, 1]
     return forces_sum
 
