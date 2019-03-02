@@ -1,6 +1,8 @@
 import numpy as np
 from .coulomb_real import CoulombReal
 from .coulomb_reciprocal import CoulombReciprocal
+# to correct intramolecular calculation
+from .coulomb_correction import CoulombCorrection
 
 def Coulomb(config, accuracy=1e-8):
     """Class factory to generate coulomb potential/force for the MD system, will automa-
@@ -24,4 +26,4 @@ def Coulomb(config, accuracy=1e-8):
     REAL_CUTOFF = np.sqrt(-np.log(accuracy)) / alpha
     REC_RESO = int(np.ceil(np.sqrt(-np.log(accuracy)) * 2 * alpha))
     
-    return CoulombReal(config, alpha, REAL_CUTOFF), CoulombReciprocal(config, alpha, REC_RESO)
+    return CoulombReal(config, alpha, REAL_CUTOFF), CoulombReciprocal(config, alpha, REC_RESO), CoulombCorrection(config, alpha)

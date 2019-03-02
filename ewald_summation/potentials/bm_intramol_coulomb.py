@@ -1,40 +1,21 @@
 import numpy as np
+from .coulomb_real import CoulombReal
+from .coulomb_correction import CoulombCorrection
+from timeit import default_timer as timer
+#from intramol_template import _get_dv_mol_nPBC, _get_dv_mol_PBC
 
-class SimuConfig:
-    def __init__(self, l_box=[1.,1.,1.], PBC=True, phys_world=None, particle_info=[0],
-                 mol_list=[], n_steps=1000, timestep=1e-10, temp=300.):
-        # TODO: sanity checks
-        self.l_box = np.asarray(l_box)
-        self.n_dim = self.l_box.shape[0]
-        self.PBC = PBC
-        # physical world
-        if phys_world is None:
-            self.phys_world = PhysWorld()
-        else:
-            self.phys_world = phys_world
-        self.particle_types = self.phys_world.particle_types
-        self.molecule_types = self.phys_world.molecule_types
-        # particles
-        self.particle_info = np.asarray(particle_info, dtype=np.uint8)
-        self.mol_list = mol_list
-        self.n_particles = self.particle_info.shape[0]
-        self.masses = np.empty(self.n_particles)
-        for i in range(self.n_particles):
-            self.masses[i] = self.particle_types[self.particle_info[i]][1]
-        self.n_steps = n_steps
-        self.timestep = timestep
-        self.temp = temp        
-
-class PhysWorld:
+class FakeWorld:
     def __init__(self):
-        # physical constants
-        self.N_A = 6.02214086e23
-        # k_B = 1.38065e-23
-        self.k_B = 0.00198720360
-        self.k_C = 332.0637128
+        self.k_C = 1.
 
-        # (mass, charge, lj_sigma, lj_epsilon)
-        # in unit g/mol, e, Angstrom, kcal/mol
+class FakeConfig:
+    def __init__(self, n_dim, l_box, n_particles, particle_info, mol_list):
+        self.n_dim = n_dim
+        self.PBC = True
+        self.l_box = l_box
+        self.n_particles = n_particles
+        self.particle_info = particle_info
+        self.phys_world = FakeWorld()
         self.particle_types = [
             # Argon parameter from Rowley, Nicholson and Parsonage, 1975
             ('Ar', 39.948, 0., 3.405, 0.238), #0
@@ -48,8 +29,6 @@ class PhysWorld:
             ('Na+', 22.990, 1., 2.35, 0.130), #3
             ('Cl-', 35.453, -1., 4.40, 0.100) #4
             ]
-
-        # here we use a simplied version from MDynaMix
         _water_bonds = [
             # (bond_type, index of par1, index of par2, EqnLen r_0, Bond k, Morse D, Morse rho)
             # bond_type = 0 (harmonic) or 1 (Morse)
@@ -63,3 +42,24 @@ class PhysWorld:
             # (name, list of particles, initial positions, bonds)
             ('water', [1, 2, 2], np.array([[0., 0., -0.064609], [0., -0.81649, 0.51275], [0., 0.81649, 0.51275]]), _water_bonds)
             ]
+        self.mol_list = mol_list
+
+
+positions = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 0]])
+mol_list = [(0, [0, 1, 2])]
+l_box = np.array([4, 4, 4])
+
+q, particle_info = positions, np.asarray([1, 2, 2], dtype=np.uint8)
+config = FakeConfig(q.shape[1], l_box, q.shape[0], particle_info, mol_list)
+a = CoulombReal(config, 1., 2.)
+b = CoulombCorrection(config, 1.)
+a.set_positions(q)
+b.set_positions(q)
+print("MULTI:", a.MULTI)
+#for pair in a.pairs:
+#    print(pair)
+# to show the results and finish the jit compiling
+print(a.pot)
+print(b.pot)
+print(a.forces)
+print(b.forces)

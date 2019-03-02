@@ -9,7 +9,7 @@ class FakeWorld:
         self.k_C = 1.
 
 class FakeConfig:
-    def __init__(self, n_dim, l_box, n_particles, particle_info):
+    def __init__(self, n_dim, l_box, n_particles, particle_info, mol_list):
         self.n_dim = n_dim
         self.PBC = True
         self.l_box = l_box
@@ -29,6 +29,20 @@ class FakeConfig:
             ('Na+', 22.990, 1., 2.35, 0.130), #3
             ('Cl-', 35.453, -1., 4.40, 0.100) #4
             ]
+        _water_bonds = [
+            # (bond_type, index of par1, index of par2, EqnLen r_0, Bond k, Morse D, Morse rho)
+            # bond_type = 0 (harmonic) or 1 (Morse)
+            # units: r_0 (Angstrom), k (kcal/mol/A^2), D (kcal/mol), rho (A^{-1})
+            (1, 0, 1, 1.000,     0., 101.90, 2.566),
+            (1, 0, 2, 1.000,     0., 101.90, 2.566),
+            (0, 1, 2, 1.633, 164.30,     0.,    0.)
+            ]
+
+        self.molecule_types = [
+            # (name, list of particles, initial positions, bonds)
+            ('water', [1, 2, 2], np.array([[0., 0., -0.064609], [0., -0.81649, 0.51275], [0., 0.81649, 0.51275]]), _water_bonds)
+            ]
+        self.mol_list = mol_list
 
 '''
 a = lj_pairwise('config*', 2, 3)
@@ -53,7 +67,7 @@ def _intializer_NaCl(n):
     return q, particle_info, l_box
 
 q, particle_info, l_box = _intializer_NaCl(16) # 12*12*12 = 1728 particles
-config = FakeConfig(q.shape[1], l_box, q.shape[0], particle_info)
+config = FakeConfig(q.shape[1], l_box, q.shape[0], particle_info, [])
 
 #accuracy = 1e-8
 ## ratio_real_rec = 5.3 #for 1e-6 accuracy
@@ -65,16 +79,17 @@ config = FakeConfig(q.shape[1], l_box, q.shape[0], particle_info)
 
 #a = CoulombReal(config, alpha, REAL_CUTOFF)
 #b = CoulombReciprocal(config, alpha, REC_RESO)
-a, b = Coulomb(config, accuracy=1e-8)
+a, b, c = Coulomb(config, accuracy=1e-8)
 a.set_positions(q)
 b.set_positions(q)
+c.set_positions(q)
 #for pair in a.pairs:
 #    print(pair)
 # to show the results and finish the jit compiling
 print('MULTI:', a.MULTI)
 #print('real cutoff:', REAL_CUTOFF)
 #print('reciprocal reso:', REC_RESO)
-print(a.pot + b.pot)
+print(a.pot + b.pot + c.pot)
 print(len(a.forces))
 print()
 
