@@ -2,6 +2,15 @@ import numpy as np
 import pytest
 import ewald_summation as es
 
+dummy_world = es.PhysWorld()
+dummy_world.k_B = 1.
+dummy_world.k_C = 1.
+dummy_world.particle_types = [
+            ('dummy_Ar', 1., 1., 1., 1.), #0
+            ('dummy_+', 1., 1., 1., 1.), #1
+            ('dummy_-', 1., -1., 1., 1.) #2
+            ]
+dummy_world.molecule_types = []
 
 # old implementation for lj pot with pbc
 def distance_vectors_periodic(x, l_box):
@@ -45,28 +54,27 @@ def lj_potential_pairwise(distance):
             switch = t * t * (3. + 2. * t)
             return phi_LJ * switch
 
-@pytest.mark.parametrize('x, epsilon_lj, sigma_lj, switch_start, cutoff, l_box', [
-    # (np.array([[0, 0], [0, 1.1]]), 1, 1, 2.5, 3.5, (2, 2)),
-    # (np.array([[0, 0, 0], [0, 0, 1]]), 1, 1, 2.5, 3.5, (5, 5, 5)),
-    # (np.array([[0, 0, 0], [0, 0, 7]]), 1, 1, 2.5, 3.5, (5, 5, 5)),
-    # (np.array([[1, 0, 0], [0, 1, -7]]), 1, 1, 2.5, 3.5, (5, 5, 5)),
-    (np.random.uniform(-2, 10, (100, 2)), 1, 1, 2.5, 3.5, (5, 5)),
-    (np.random.uniform(-2, 10, (100, 3)), 1, 1, 2.5, 3.5, (5, 5, 5)),
+@pytest.mark.parametrize('x', [
+    (np.array([[0, 0, 0], [1, 0, 0]])),
+    (np.array([[0, 0, 1],[1, 0, 0], [0, 1, 0]])),
+    (np.array([[0, 0, 0], [0, 1, 0], [1, 1, 1]])),
+    # (np.array([[0,0,0],[0,1,3.1]]), 1, 1, 2.5, 3.5),
+    (np.random.uniform(-20, 20, (100, 2))),
+    # (np.random.uniform(-20, 20, (100, 3))),
     ])
-def test_potential(x, epsilon_lj, sigma_lj, switch_start, cutoff, l_box):
-    test_config = es.SimuConfig(n_dim=x.shape[1],
-                                l_box=l_box,
-                                n_particles=x.shape[0],
-                                sigma_lj = [sigma_lj] * x.shape[0],
-                                epsilon_lj = [epsilon_lj] * x.shape[0],
-                                PBC = True,
-                                switch_start = switch_start,
-                                cutoff = cutoff,
-                                parallel_flag = False,
+def test_potential(x):
+    test_config = es.SimuConfig(l_box=[10.] * x.shape[1],
+                                PBC=True,
+                                particle_info=[0] * x.shape[0],
+                                n_steps=2000,
+                                timestep=0.001,
+                                temp=30,
+                                phys_world=dummy_world,
                                 )
-    calc_potential = es.potentials.CalcPotential(test_config, [])
-    potential1 = calc_potential(x)
+    pot = es.potentials.LJ(test_config, 2.5, 3.5)
+    pot.set_positions(x)
+    potential1 = pot.pot
     # legacy potential implementaton, requires sigma, epsilon = 1
     # and a switch region of 2.5 to 3.5
-    potential2 = lj_potential_total(distance_vectors_periodic(x, l_box))
+    potential2 = es.potentials.lj_potential_total(x)
     np.testing.assert_allclose(potential1, potential2)
