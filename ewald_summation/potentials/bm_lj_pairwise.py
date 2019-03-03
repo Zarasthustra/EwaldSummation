@@ -1,6 +1,7 @@
 import numpy as np
 from .lj_pairwise import LJ
 from timeit import default_timer as timer
+import ewald_summation as es
 
 class FakeConfig:
     def __init__(self, n_dim, l_box, n_particles, particle_info):
@@ -44,6 +45,8 @@ def _intializer_NaCl(n):
     q = 4. * grid
     particle_info = grid.sum(axis=1)%2+3
     return q, particle_info, l_box
+
+print(es.potentials.testo_testo)
 
 q, particle_info, l_box = _intializer_NaCl(12) # 12*12*12 = 1728 particles
 config = FakeConfig(q.shape[1], l_box, q.shape[0], particle_info)
