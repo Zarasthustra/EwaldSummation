@@ -30,12 +30,12 @@ def LJ(config, switch_start=2.5, cutoff=3.5):
             distance = dv[1]
             distance_squared = distance ** 2
             if(distance <= switch_start):
-                return (4. * epsilon * sigma**6 / distance_squared**3
+                return (2. * epsilon * sigma**6 / distance_squared**3
                         * (sigma**6 / distance_squared**3 - 1)
                         )
             # calculate potential in switch region
             if (distance > switch_start) and (distance <= cutoff):
-                return (4. * epsilon * sigma**6 / distance_squared**3 * (sigma**6 / distance_squared**3 - 1)
+                return (2. * epsilon * sigma**6 / distance_squared**3 * (sigma**6 / distance_squared**3 - 1)
                     * (2 * ((distance - cutoff) / switch_width)**3
                     + 3 * ((distance - cutoff) / switch_width)**2)
                     )

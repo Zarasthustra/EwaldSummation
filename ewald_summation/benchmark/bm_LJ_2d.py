@@ -14,9 +14,11 @@ def random_initiliazer(box_size, n_particles):
 test_config = es.SimuConfig(l_box=(8., 8.),
                             PBC=True,
                             particle_info=[0] * 40,
-                            n_steps=2000, timestep=0.001,
+                            n_steps=2000,
+                            timestep=0.001,
                             temp=30,
-                            phys_world=dummy_world)
+                            phys_world=dummy_world,
+                            )
 test_md = es.MD(test_config, random_initiliazer, es.step_runners.Langevin(damping=0.01))
 test_md.add_potential(es.potentials.LJ(test_config, switch_start=2.5, cutoff=3.5))
 test_md.run_all()

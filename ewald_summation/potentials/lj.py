@@ -14,7 +14,7 @@ def lj_potential_total(x):
     n_particles = x.shape[0]
     potential = 0
     for i in range(n_particles):
-        for j in range(i, n_particles):
+        for j in range(i + 1, n_particles):
             potential += lj_potential_pairwise(np.linalg.norm(x[i, :] - x[j, :]))
     return potential
 

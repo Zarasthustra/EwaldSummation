@@ -28,7 +28,6 @@ def lj_potential_total(distance_vectors):
     potential = 0
     for i in range(n_particles):
         for j in range(i + 1, n_particles):
-            # print('distances_old', distances[i, j])
             potential += lj_potential_pairwise(distances[i, j])
     return potential
 
@@ -57,10 +56,6 @@ def lj_potential_pairwise(distance):
 @pytest.mark.parametrize('x', [
     (np.array([[0, 0, 0], [1, 0, 0]])),
     (np.array([[0, 0, 1],[1, 0, 0], [0, 1, 0]])),
-    (np.array([[0, 0, 0], [0, 1, 0], [1, 1, 1]])),
-    # (np.array([[0,0,0],[0,1,3.1]]), 1, 1, 2.5, 3.5),
-    (np.random.uniform(-20, 20, (100, 2))),
-    # (np.random.uniform(-20, 20, (100, 3))),
     ])
 def test_potential(x):
     test_config = es.SimuConfig(l_box=[10.] * x.shape[1],
