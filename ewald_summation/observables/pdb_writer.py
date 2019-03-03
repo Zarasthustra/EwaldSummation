@@ -10,7 +10,7 @@ class PdbWriter:
         self.particle_info = config.particle_info
         self.particle_types = config.particle_types
         self.molecule_types = config.molecule_types
-        self.mol_indices = -np.ones((self.n_particles, 2), dtype=np.int8)
+        self.mol_indices = -np.ones((self.n_particles, 2), dtype=np.int)
         for mol in config.mol_list:
             mol_index = mol[1][0] + 1
             mol_type = mol[0]

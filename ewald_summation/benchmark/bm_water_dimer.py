@@ -15,7 +15,7 @@ def StupidInitializerWater(box_size, n_particles):
 particle_info=[1, 2, 2, 1, 2, 2]
 mol_list = [(0, [0, 1, 2]), (0, [3, 4, 5])]
 
-test_config = es.SimuConfig(l_box=(8., 8., 8.), PBC=True, particle_info=particle_info, mol_list=mol_list, n_steps=1000, timestep=0.01, temp=500)
+test_config = es.SimuConfig(l_box=(8., 8., 8.), PBC=True, particle_info=particle_info, mol_list=mol_list, n_steps=1000, timestep=0.02, temp=300)
 test_md = es.MD(test_config, StupidInitializerWater, es.step_runners.Langevin(damping=0.05))
 test_md.add_potential(es.potentials.Water(test_config))
 test_md.add_potential(es.potentials.LJ(test_config, switch_start=5., cutoff=7.))
