@@ -120,4 +120,3 @@ def lagevin_harmonic_lj_cuda(q_0, p_0, masses, particle_types, lj_mixing_conditi
 
     # copy trajectory
     return q_device.copy_to_host(), p_device.copy_to_host()
-    # return force_device.copy_to_host()

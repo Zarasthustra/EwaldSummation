@@ -7,3 +7,4 @@ from .pairwise_template import pairwise
 from .lj_pairwise import LJ
 from .coulomb_combined import Coulomb
 from .lagevin_harmonic_lj_cuda import *
+from .lagevin_coulomb_lj_cuda import *
