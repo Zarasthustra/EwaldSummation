@@ -2,11 +2,14 @@ import numpy as np
 
 class SimuConfig:
     def __init__(self, l_box=[1.,1.,1.], PBC=True, phys_world=None, particle_info=[0],
-                 mol_list=[], n_steps=1000, timestep=1e-10, temp=300.):
+                 mol_list=[], neighbor_list=True, n_steps=1000, timestep=1e-10, temp=300.):
         # TODO: sanity checks
         self.l_box = np.asarray(l_box)
         self.n_dim = self.l_box.shape[0]
+        self.neighbor_list = neighbor_list
         self.PBC = PBC
+        if not PBC:
+            self.neighbor_list = False
         # physical world
         if phys_world is None:
             self.phys_world = PhysWorld()
@@ -56,7 +59,8 @@ class PhysWorld:
             # units: r_0 (Angstrom), k (kcal/mol/A^2), D (kcal/mol), rho (A^{-1})
             (1, 0, 1, 1.000,     0., 101.90, 2.566),
             (1, 0, 2, 1.000,     0., 101.90, 2.566),
-            (0, 1, 2, 1.633, 164.30,     0.,    0.)
+            #(0, 1, 2, 1.633, 164.30,     0.,    0.)
+            (0, 1, 2, 1.633, 354.04,     0.,    0.)
             ]
 
         self.molecule_types = [
