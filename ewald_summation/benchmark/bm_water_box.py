@@ -38,6 +38,6 @@ test_md.add_potential(es.potentials.Coulomb(test_config))
 test_md.run_all()
 #print(test_md.traj.get_qs())
 qs = test_md.traj.get_qs()
-pdb = es.observables.PdbWriter(test_config, 'water_box.pdb')
+pdb = es.observables.PdbWriter(test_config, 'water_box.pdb', put_in_box=True)
 for i in range(int(steps/10)):
     pdb.write_frame(qs[i * 10])
