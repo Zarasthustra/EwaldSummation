@@ -3,14 +3,14 @@ import numpy as np
 
 class PdbWriter:
     ATOM = 'ATOM  {:5d} {:>4s} {:>3s}  {:4d}    {:8.3f}{:8.3f}{:8.3f}{:6.2f}{:6.2f}\n'
-    def __init__(self, config, filepath='output.pdb'):
+    def __init__(self, config, filepath='output.pdb', put_in_box=False):
         self.l_box = config.l_box
         self.PBC = config.PBC
         self.n_particles = config.n_particles
         self.particle_info = config.particle_info
         self.particle_types = config.particle_types
         self.molecule_types = config.molecule_types
-        self.mol_indices = -np.ones((self.n_particles, 2), dtype=np.int8)
+        self.mol_indices = -np.ones((self.n_particles, 2), dtype=np.int)
         for mol in config.mol_list:
             mol_index = mol[1][0] + 1
             mol_type = mol[0]
@@ -26,14 +26,15 @@ class PdbWriter:
         self.file = open(filepath, 'w')
         self.file.write('CRYST1{:9.3f}{:9.3f}{:9.3f}{:7.2f}{:7.2f}{:7.2f}\n'.format(self.l_box[0], self.l_box[1], self.l_box[2], 90., 90., 90.))
         self.is_finished = False
+        self.put_in_box = put_in_box
         self.current_model = 1
 
     def write_frame(self, positions):
         if(not self.is_finished):
             self.file.write('MODEL     {:4d}\n'.format(self.current_model))
             self.positions = positions.copy()
-            #if(self.PBC):
-                #self.positions %= self.l_box
+            if(self.PBC and self.put_in_box):
+                self.positions %= self.l_box
             for i in range(self.n_particles):
                 atom_name = self.particle_types[self.particle_info[i]][0].upper()
                 mol_index = self.mol_indices[i, 0]

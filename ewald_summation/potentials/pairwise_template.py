@@ -25,8 +25,101 @@ def pairwise(pairwise_pot):
     def mk_cls(config, *args, **kwargs):
         # pw = PWNumba(config)
         # pw.pot_func, pw.force_func = pairwise_pot(config, *args, **kwargs)
-        return PWNumba(config, pairwise_pot(config, *args, **kwargs))
+        if(config.neighbor_list):
+            return PWNumba(config, pairwise_pot(config, *args, **kwargs))
+        else:
+            return PWDV(config, pairwise_pot(config, *args, **kwargs))
     return mk_cls
+
+class PWDV:
+    """Class to define a pair-wise potential/force, with auto selction between
+    nearest-neighbor and multi-image conventions.
+    
+    Init:
+    config: MD system configuration
+    func: a tuple of pair-wise potential and force functions (and cutoff(optional))
+    cutoff (optional): if cutoff is not provided above, then put it here
+    
+    Usage:
+    First set new positions of system particle q.
+    Then potentials and forces can be retrieved from properties pot, pots and forces.
+    """
+
+    def __init__(self, config, func, cutoff=None):
+        self.PBC = config.PBC
+        if(self.PBC):
+            self.l_box = config.l_box
+        self.n_particles = config.n_particles
+        self.n_dim = config.n_dim
+        self.particle_info = config.particle_info
+        self.positions = np.zeros((self.n_particles, self.n_dim))
+        if(len(func) == 3):
+            self.CUTOFF = func[2]
+        else:
+            self.CUTOFF = cutoff
+        assert self.CUTOFF is not None, 'invalid cutoff.'
+        self.pot_func = func[0]
+        self.force_func = func[1]
+        self._pot = None
+        self._forces = None
+
+    def set_positions(self, new_positions):
+        #if self.PBC:
+            #self.positions[:, :] = new_positions % self.l_box
+        #else:
+        self.positions = new_positions
+        self._pot_recalc = True
+        self._force_recalc = True
+    
+    @property
+    def pot(self):
+        if(self._pot_recalc):
+            distance_vectors = self.positions[:, None, :] - self.positions[None, :, :]
+            if(self.PBC):
+                np.mod(distance_vectors, self.l_box, out=distance_vectors)
+                mask = distance_vectors > np.divide(self.l_box, 2.)
+                distance_vectors += mask * -self.l_box
+            self._pot = _pot_dv(self.n_particles, distance_vectors, self.pot_func, self.particle_info)
+            self._pot_recalc = False
+        return self._pot
+    
+    @property
+    def forces(self):
+        if(self._force_recalc):
+            distance_vectors = self.positions[:, None, :] - self.positions[None, :, :]
+            if(self.PBC):
+                np.mod(distance_vectors, self.l_box, out=distance_vectors)
+                mask = distance_vectors > np.divide(self.l_box, 2.)
+                distance_vectors += mask * -self.l_box
+            self._forces = _forces_dv(self.n_particles, self.n_dim, distance_vectors, self.force_func, self.particle_info)
+            self._force_recalc = False
+        return self._forces
+
+@njit
+def _pot_dv(n_particles, distance_vectors, pot_func, particle_info):
+    pot_sum = 0.
+    for i in range(n_particles):
+        for j in range(i + 1, n_particles):
+            type_i, type_j = particle_info[i], particle_info[j]
+            dv = distance_vectors[i, j]
+            dist = np.sqrt(np.square(dv).sum())
+            if(dist != 0.):
+                pot_sum += 2 * pot_func((type_i, type_j), (dv, dist))
+    return pot_sum
+
+@njit
+def _forces_dv(n_particles, n_dim, distance_vectors, force_func, particle_info):
+    forces_sum = np.zeros((n_particles, n_dim))
+    for i in range(n_particles):
+        for j in range(i + 1, n_particles):
+            type_i, type_j = particle_info[i], particle_info[j]
+            dv = distance_vectors[i, j]
+            dist = np.sqrt(np.square(dv).sum())
+            if(dist != 0.):
+                force = force_func((type_i, type_j), (dv, dist))
+                forces_sum[i] += force
+                forces_sum[j] -= force
+    return forces_sum
 
 _HEAD = -1
 _None = -1

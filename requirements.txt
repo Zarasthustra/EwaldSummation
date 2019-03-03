@@ -1,1 +1,5 @@
-# TODO: write down the names of all needed extenal packages here. 
+matplotlib>=3.0.1
+scipy>=1.1.0
+pytest>=4.0.0
+numba>=0.42.0
+numpy>=1.15.0
