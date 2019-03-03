@@ -1,3 +1,3 @@
-from .integrators import * 
+from .integrators import *
 from .mc import *
-from .gradient_decent import *
+from .gradient_descent import *

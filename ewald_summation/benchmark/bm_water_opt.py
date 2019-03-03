@@ -29,7 +29,7 @@ q, v, particle_info, l_box, mol_list = _intializer_WaterBox(3)
 steps = 5000
 test_config = es.SimuConfig(l_box=l_box, PBC=True, neighbor_list=False, particle_info=particle_info, mol_list=mol_list, n_steps=steps, timestep=1e-3, temp=500)
 init = lambda x,y: (q, v)
-test_md = es.MD(test_config, init, es.step_runners.GradientDecent())
+test_md = es.MD(test_config, init, es.step_runners.GradientDescent())
 test_md.add_potential(es.potentials.Water(test_config))
 test_md.add_potential(es.potentials.LJ(test_config, switch_start=5., cutoff=7.))
 test_md.add_potential(es.potentials.Coulomb(test_config))
