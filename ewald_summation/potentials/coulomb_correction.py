@@ -11,7 +11,8 @@ def CoulombCorrection(config, alpha):
     assert config.PBC, "Ewald sum only meaningful for periodic systems."
     # exactly the opposite of real part, to cancel the intramolecular 
     # Coulomb calc.
-    prefactor = -config.phys_world.k_C / 2.
+    prefactor1 = -config.phys_world.k_C / 2.
+    prefactor2 = -config.phys_world.k_C
     n_alpha_sq = -alpha * alpha
     alpha_coeff = 2 * alpha / math.sqrt(np.pi)
     particle_types = config.particle_types
@@ -33,8 +34,11 @@ def CoulombCorrection(config, alpha):
         for bond in mol_descr[3]:
             i, j = bond[1], bond[2] # here i, j are the atom indeces in the mol
             distance = dv[1][i, j]
-            pot += 2 * prefactor * charge_product[mol_descr[1][i], mol_descr[1][j]] *\
+            '''
+            pot += 2 * prefactor1 * charge_product[mol_descr[1][i], mol_descr[1][j]] *\
                    math.erfc(alpha * distance) / distance
+            '''
+            pot += prefactor2 * charge_product[mol_descr[1][i], mol_descr[1][j]] / distance
         return pot
     
     @njit
@@ -45,10 +49,13 @@ def CoulombCorrection(config, alpha):
             i, j = bond[1], bond[2]
             distance_vector, distance = dv[0][i, j], dv[1][i, j]
             distance_squared = distance * distance
+            '''
             real_part1 = math.erfc(alpha * distance) / distance + \
                             alpha_coeff * math.exp(n_alpha_sq * distance_squared)
-            real_part = prefactor * charge_product[mol_descr[1][i], mol_descr[1][j]] *\
+            real_part = prefactor2 * charge_product[mol_descr[1][i], mol_descr[1][j]] *\
                         (real_part1 / distance_squared) * distance_vector
+            '''
+            real_part = prefactor2 * charge_product[mol_descr[1][i], mol_descr[1][j]] / distance_squared / distance * distance_vector
             forces[i] += real_part
             forces[j] -= real_part
         return forces

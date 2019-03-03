@@ -9,7 +9,8 @@ def CoulombReal(config, alpha, cutoff):
     n_dim = config.n_dim
     assert n_dim == 3, "For other dimensions not implemented."
     assert config.PBC, "Ewald sum only meaningful for periodic systems."
-    prefactor = config.phys_world.k_C / 2.
+    prefactor1 = config.phys_world.k_C / 2.
+    prefactor2 = config.phys_world.k_C
     n_alpha_sq = -alpha * alpha
     alpha_coeff = 2 * alpha / math.sqrt(np.pi)
     particle_types = config.particle_types
@@ -26,7 +27,7 @@ def CoulombReal(config, alpha, cutoff):
     def pot_func(pair, dv):
         i, j = pair[0], pair[1]
         distance = dv[1]
-        return prefactor * charge_product[i, j] * math.erfc(alpha * distance) / distance
+        return prefactor1 * charge_product[i, j] * math.erfc(alpha * distance) / distance
     
     @njit
     def force_func(pair, dv):
@@ -35,6 +36,6 @@ def CoulombReal(config, alpha, cutoff):
         distance_squared = distance * distance
         real_part = math.erfc(alpha * distance) / distance + \
                         alpha_coeff * math.exp(n_alpha_sq * distance_squared)
-        return prefactor * charge_product[i, j] * (real_part / distance_squared) * distance_vector
+        return prefactor2 * charge_product[i, j] * (real_part / distance_squared) * distance_vector
     
     return pot_func, force_func, cutoff

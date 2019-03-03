@@ -1,6 +1,7 @@
 import numpy as np
 from .coulomb_real import CoulombReal
 from .coulomb_correction import CoulombCorrection
+from .water import Water
 from timeit import default_timer as timer
 #from intramol_template import _get_dv_mol_nPBC, _get_dv_mol_PBC
 
@@ -40,17 +41,23 @@ class FakeConfig:
 
         self.molecule_types = [
             # (name, list of particles, initial positions, bonds)
-            ('water', [1, 2, 2], np.array([[0., 0., -0.064609], [0., -0.81649, 0.51275], [0., 0.81649, 0.51275]]), _water_bonds)
+            ('HOH', [1, 2, 2], np.array([[0., 0., -0.064609], [0., -0.81649, 0.51275], [0., 0.81649, 0.51275]]), _water_bonds)
             ]
         self.mol_list = mol_list
 
 
-positions = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 0]])
+#positions = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 0]])
+positions = np.array([[0., 0., -0.064609], [0., -0.81649, 0.51275], [0., 0.81649, 0.51275]])
 mol_list = [(0, [0, 1, 2])]
 l_box = np.array([4, 4, 4])
 
 q, particle_info = positions, np.asarray([1, 2, 2], dtype=np.uint8)
 config = FakeConfig(q.shape[1], l_box, q.shape[0], particle_info, mol_list)
+w = Water(config)
+w.set_positions(q)
+print(w.pot)
+print(w.forces)
+'''
 a = CoulombReal(config, 1., 2.)
 b = CoulombCorrection(config, 1.)
 a.set_positions(q)
@@ -63,3 +70,4 @@ print(a.pot)
 print(b.pot)
 print(a.forces)
 print(b.forces)
+'''
