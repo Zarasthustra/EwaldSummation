@@ -61,5 +61,5 @@ class PhysWorld:
 
         self.molecule_types = [
             # (name, list of particles, initial positions, bonds)
-            ('water', [1, 2, 2], np.array([[0., 0., -0.064609], [0., -0.81649, 0.51275], [0., 0.81649, 0.51275]]), _water_bonds)
+            ('HOH', [1, 2, 2], np.array([[0., 0., -0.064609], [0., -0.81649, 0.51275], [0., 0.81649, 0.51275]]), _water_bonds)
             ]

@@ -15,12 +15,13 @@ def CoulombReciprocal(config, alpha, rec_reso):
     for i in range(config.n_particles):
         type_i = config.particle_info[i]
         charges[i] = config.particle_types[type_i][2]
-    
+
     m = (1/l_box) * _grid_points_without_center(rec_reso, rec_reso, rec_reso)
     m_modul_sq = np.linalg.norm(m, axis = 1) ** 2
     coeff_S = np.exp(-(math.pi / alpha) ** 2 * m_modul_sq) / m_modul_sq
     v_rec_prefactor = prefactor * 0.5 / math.pi / (l_box[0] * l_box[1] * l_box[2])
-    f_rec_prefactor = -prefactor * charges / (l_box[0] * l_box[1] * l_box[2]) # j and 2pi parts come here
+    #f_rec_prefactor = -prefactor * charges / (l_box[0] * l_box[1] * l_box[2]) # j and 2pi parts come here
+    f_rec_prefactor = -prefactor / (l_box[0] * l_box[1] * l_box[2]) # j and 2pi parts come here
     v_self = -alpha / math.sqrt(math.pi) * np.sum(charges**2)
 
     def pot_func(q):
@@ -40,7 +41,7 @@ def CoulombReciprocal(config, alpha, rec_reso):
         S_m_cos_sum, S_m_sin_sum = S_m_cos_parts.sum(axis=0), S_m_sin_parts.sum(axis=0)
         dS_modul_sq = 2. * S_m_cos_sum * S_m_sin_parts - 2. * S_m_sin_sum * S_m_cos_parts
         f_rec = f_rec_prefactor[..., None] * (coeff_S * dS_modul_sq).dot(m)
-        return f_rec
+        return -f_rec
     
     return pot_func, force_func
 
