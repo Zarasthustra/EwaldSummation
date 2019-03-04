@@ -3,3 +3,4 @@ scipy>=1.1.0
 pytest>=4.0.0
 numba>=0.42.0
 numpy>=1.15.0
+cudatoolkit
