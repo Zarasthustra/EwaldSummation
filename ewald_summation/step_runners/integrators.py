@@ -7,9 +7,9 @@ class Langevin:
     def init(self, config):
         time_step = config.timestep
         mass = config.masses
-        beta = 1. / (config.phys_world.k_B * config.temp)
+        beta = 1. / (config.phys_world.k_B * config.temp * 4.184e-4)
         self.shape = list((config.n_particles, config.n_dim))
-        self.th = 0.5 * time_step
+        self.th = 0.5 * time_step / 2390.057
         self.thm = 0.5 * time_step / mass[:, None]
         self.edt = np.exp(-self.damping * time_step)
         self.sqf = np.sqrt((1.0 - self.edt ** 2) / beta)
@@ -20,10 +20,10 @@ class Langevin:
             self.force = sum_force(frame.q, step)
         next_frame.p[:, :] = frame.p + self.th * self.force
         next_frame.q[:, :] = frame.q + self.thm * next_frame.p
-        next_frame.p[:, :] = self.edt * next_frame.p + self.sqf * np.random.randn(*self.shape)
+        next_frame.p[:, :] = -self.edt * next_frame.p + self.sqf * np.random.randn(*self.shape)
         next_frame.q[:, :] = next_frame.q + self.thm * next_frame.p
         self.force[:, :] = sum_force(next_frame.q, step + 1)
-        next_frame.p[:, :] = next_frame.p + self.thm * self.force
+        next_frame.p[:, :] = next_frame.p + self.th * self.force
         return next_frame
 
 '''
@@ -31,11 +31,9 @@ def langevin(force, config, frame, next_frame):
         force, n_steps, x_init, v_init, mass,
         time_step=0.001, damping=0.1, beta=1.0):
     """Langevin integrator for initial value problems
-
     This function implements the BAOAB algorithm of Benedict Leimkuhler
     and Charles Matthews. See J. Chem. Phys. 138, 174102 (2013) for
     further details.
-
     Arguments:
         force (function): computes the forces of a single configuration
         n_steps (int): number of integration steps
@@ -45,7 +43,6 @@ def langevin(force, config, frame, next_frame):
         time_step (float): time step for the integration
         damping (float): damping term, use zero if not coupled
         beta (float): inverse temperature
-
     Returns:
         x (numpy.ndarray(n_steps + 1, n, d)): configuraiton trajectory
         v (numpy.ndarray(n_steps + 1, n, d)): velocity trajectory

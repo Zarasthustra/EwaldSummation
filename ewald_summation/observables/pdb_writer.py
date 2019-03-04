@@ -32,8 +32,8 @@ class PdbWriter:
         if(not self.is_finished):
             self.file.write('MODEL     {:4d}\n'.format(self.current_model))
             self.positions = positions.copy()
-            #if(self.PBC):
-                #self.positions %= self.l_box
+            if(self.PBC):
+                self.positions %= self.l_box
             for i in range(self.n_particles):
                 atom_name = self.particle_types[self.particle_info[i]][0].upper()
                 mol_index = self.mol_indices[i, 0]

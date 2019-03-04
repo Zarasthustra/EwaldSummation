@@ -25,8 +25,8 @@ class SimuConfig:
         for i in range(self.n_particles):
             self.masses[i] = self.particle_types[self.particle_info[i]][1]
         self.n_steps = n_steps
-        self.timestep = timestep
-        self.temp = temp        
+        self.timestep = timestep# / 2390.057 # to fix the problem of kcal unit
+        self.temp = temp #* 2390.057
 
 class PhysWorld:
     def __init__(self):
@@ -66,4 +66,4 @@ class PhysWorld:
         self.molecule_types = [
             # (name, list of particles, initial positions, bonds)
             ('HOH', [1, 2, 2], np.array([[0., 0., -0.064609], [0., -0.81649, 0.51275], [0., 0.81649, 0.51275]]), _water_bonds)
-            ]
+]

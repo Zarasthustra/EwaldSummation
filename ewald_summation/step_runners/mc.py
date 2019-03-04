@@ -25,6 +25,7 @@ class MMC:
             if acc_rate <= 0.4:
                 self.mc_step *= 0.95
             self.mc_accepted = 0
+        
         # dynamically change the acceptance rate to make shure that the phase space 
         # is accurately sampled. The interval 40-60 % is taken form Allen Tildesley 1989   
         pointToMove = np.random.randint(self.n_particles)

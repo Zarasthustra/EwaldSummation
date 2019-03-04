@@ -97,4 +97,5 @@ class MD:
         #self.calc_force = es.potentials.CalcForce(self.config, self.global_potentials)
         # run sim for n_steps
         for step in range(self.traj.current_frame_num, self.n_steps):
+            print(step)
             self.run_step(step)
