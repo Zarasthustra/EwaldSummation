@@ -25,8 +25,8 @@ class SimuConfig:
         for i in range(self.n_particles):
             self.masses[i] = self.particle_types[self.particle_info[i]][1]
         self.n_steps = n_steps
-        self.timestep = timestep / 2390.057 # to fix the problem of kcal unit
-        self.temp = temp * 2390.057
+        self.timestep = timestep# / 2390.057 # to fix the problem of kcal unit
+        self.temp = temp #* 2390.057
 
 class PhysWorld:
     def __init__(self):
